@@ -23,6 +23,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String songName = "full-0.mp3";
     private static final String sampleFileName = "testsample.mp3";
+    private static final String downloadPath = Environment
+            .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            .getAbsolutePath();
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -30,26 +34,22 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         new AndroidFFMPEGLocator(this);
 
-        final String downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
-
-        registerCopyButtonListener(downloadPath);
         registerClipButtonListener();
-        registerFingerprintGenerateButtonListener(downloadPath);
+        registerFingerprintGenerateButtonListener();
 
     }
 
     /**
      *Register listener for generate finger print button
      *
-     * @param downloadPath
      */
-    private void registerFingerprintGenerateButtonListener(final String downloadPath) {
+    private void registerFingerprintGenerateButtonListener() {
         Button generateFingerPrints = (Button) findViewById(R.id.button2);
         generateFingerPrints.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View view) {
-                List<List<NFFTFingerprint>> result = getAudioFingerprints(downloadPath);
+                List<List<NFFTFingerprint>> result = getAudioFingerprints();
                 TextView printFingerprint = (TextView)findViewById(R.id.textView3);
                 printFingerprint.setText(result.toString());
                 File fdelete = new File(downloadPath + "/" + sampleFileName);
@@ -68,30 +68,18 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 EditText fromSeconds = (EditText) findViewById(R.id.editText);
                 EditText endSeconds = (EditText) findViewById(R.id.editText2);
-                clipSong(fromSeconds.getText().toString(),endSeconds.getText().toString(),AndroidFFMPEGLocator.ffmpegTargetLocation().getAbsolutePath());
+                EditText srcSongPath = (EditText) findViewById(R.id.editText3);
+                clipSong(fromSeconds.getText().toString(),
+                        endSeconds.getText().toString(),
+                        srcSongPath.getText().toString(),
+                        AndroidFFMPEGLocator.ffmpegTargetLocation().getAbsolutePath());
             }
 
         });
     }
 
-    /**
-     *
-     * Register listener for copy button
-     *
-     * @param downloadPath
-     */
-    private void registerCopyButtonListener(final String downloadPath) {
-        Button copyButton = (Button)findViewById(R.id.button);
-        copyButton.setOnClickListener(new View.OnClickListener(){
-            @Override
-            public void onClick(View view) {
-                copyFromAssetsToDownloadPath(downloadPath);
-            }
-        });
-    }
 
-
-    private List<List<NFFTFingerprint>> getAudioFingerprints(String downloadPath) {
+    private List<List<NFFTFingerprint>> getAudioFingerprints() {
         List<String> files  = FileUtils.glob(downloadPath, sampleFileName, false);
 
         List<List<NFFTFingerprint>> result = new ArrayList<>();
@@ -116,10 +104,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void clipSong(String startTime, String endTime, String ffmpegDestination){
+    private void clipSong(String startTime, String endTime, String srcSongPath ,String ffmpegDestination){
 
-        final String downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
-        String srcSongPath = downloadPath + "/" + songName;
         String targetSongPath = downloadPath + "/" + sampleFileName;
 
         String[] cmd = {
@@ -139,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void copyFromAssetsToDownloadPath(String downloadPath) {
+    private void copyFromAssetsToDownloadPath() {
         String[] test = null;
         InputStream in = null;
         OutputStream out = null;
