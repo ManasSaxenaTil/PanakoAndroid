@@ -3,11 +3,11 @@
     android:orientation="vertical" android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/textView4"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Song Full Path" />
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="37dp"
+        android:text="Browse Files" />
 
     <EditText
         android:id="@+id/editText3"
@@ -60,7 +60,7 @@
     <TextView
         android:id="@+id/textView3"
         android:layout_width="match_parent"
-        android:layout_height="253dp"
+        android:layout_height="91dp"
         android:text="" />
 
 </LinearLayout>

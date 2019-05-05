@@ -4,17 +4,6 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 
-/**
- * Implementation of a min-max filter algorithm described in
- * <a href="http://arxiv.org/pdf/cs/0610046v5.pdf">"Streaming Maximum-Minimum
- * Filter Using No More than 3 Comparisons per Element"</a>. It is based on the
- * <a href="https://github.com/lemire/runningmaxmin">c++ code by Daniel
- * Lemire</a>, provided under the GPLv2.
- * 
- * @author Joren Six
- * @author Daniel Lemire
- *
- */
 public class LemireMinMaxFilter {
 
     private final int windowSize;

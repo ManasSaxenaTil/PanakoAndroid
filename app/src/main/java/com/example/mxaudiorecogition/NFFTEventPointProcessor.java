@@ -20,7 +20,6 @@ public class NFFTEventPointProcessor implements AudioProcessor {
     private final FFT fft;
 
     /**
-     * 
      * Use a 2D float array to prevent creation of new objects in the processing
      * loop, at the expense of a bit of complexity
      */
@@ -70,21 +69,21 @@ public class NFFTEventPointProcessor implements AudioProcessor {
     private final float[] maxHorizontal;
     private final float[] minHorizontal;
 
-    int maxFingerprintsPerEventPoint = Config.getInt(Key.NFFT_MAX_FINGERPRINTS_PER_EVENT_POINT);
+    public static int defaultMaxFilterWindowSize = 15;
+    public static int defaultMinFilterWindowSize = 7;
+    public static int maxFingerprintsPerEventPoint =2;
+    public static int maxEventPointsPerFrame =3;
+    public static int nfftSize = 512;
+    public static int nfftStepSize = 256;
+    public static int nfftSampleRate = 8000;
+    public static int nfftMinEventPointsDistance = 600;
 
-    private static final int defaultMaxFilterWindowSize = Config.getInt(Key.NFFT_MAX_FILTER_WINDOW_SIZE);
-    private static final int defaultMinFilterWindowSize = Config.getInt(Key.NFFT_MIN_FILTER_WINDOW_SIZE);
-
-    public NFFTEventPointProcessor(int size, int overlap, int sampleRate) {
-        this(size, overlap, sampleRate, defaultMaxFilterWindowSize, defaultMinFilterWindowSize);
-    }
-
-    private NFFTEventPointProcessor(int fftSize, int overlap, int sampleRate, int maxFilterWindowSize,
-            int minFilterWindowSize) {
+    public NFFTEventPointProcessor(int fftSize, int overlap, int sampleRate) {
         fft = new FFT(fftSize, new HammingWindow());
 
-        this.maxFilterWindowSize = maxFilterWindowSize;
-        this.minFilterWindowSize = minFilterWindowSize;
+        this.maxFilterWindowSize = defaultMaxFilterWindowSize;
+        this.minFilterWindowSize = defaultMinFilterWindowSize;
+
         longestFilterWindowSize = Math.max(maxFilterWindowSize, minFilterWindowSize);
 
         magnitudesIndex = 0;
@@ -202,7 +201,7 @@ public class NFFTEventPointProcessor implements AudioProcessor {
 
             if (currentVal == maxVal && currentVal != 0 && minVal != 0) {
                 float[] previousPhaseData = previousPhase.get(frameUnderAnalysis - 1);
-                float frequencyEstimate = getFrequencyForBin(i, currentPhase, previousPhaseData);// in Hz
+                float frequencyEstimate = getFrequencyForBin(i, currentPhase, previousPhaseData); // in Hz
                 eventPoints.add(new NFFTEventPoint(frameUnderAnalysis + longestFilterWindowSize, i, frequencyEstimate,
                         currentVal));
                 filterEventPoints();
@@ -211,12 +210,10 @@ public class NFFTEventPointProcessor implements AudioProcessor {
     }
 
     private void filterEventPoints() {
-        // do not
 
         int history = 25;
 
         // filter excessive amount of event points in one frame
-        int maxEventPointsPerFrame = Config.getInt(Key.NFFT_EVENT_POINTS_MAX_PER_FFT_FRAME);
         HashMap<Integer, ArrayList<NFFTEventPoint>> counter = new HashMap<Integer, ArrayList<NFFTEventPoint>>();
         for (int i = Math.max(eventPoints.size() - history, 0); i < eventPoints.size(); i++) {
             NFFTEventPoint ep = eventPoints.get(i);
@@ -242,19 +239,16 @@ public class NFFTEventPointProcessor implements AudioProcessor {
             }
         }
 
-        int size = Config.getInt(Key.NFFT_SIZE);
-        FFT fft = new FFT(size);
-        float[] binStartingPointsInCents = new float[size];
-        float[] binHeightsInCents = new float[size];
-        for (int i = 1; i < size; i++) {
+        FFT fft = new FFT(nfftSize);
+        float[] binStartingPointsInCents = new float[nfftSize];
+        float[] binHeightsInCents = new float[nfftSize];
+        for (int i = 1; i < nfftSize; i++) {
             binStartingPointsInCents[i] = (float) PitchConverter.hertzToAbsoluteCent(fft.binToHz(i, sampleRate));
             binHeightsInCents[i] = binStartingPointsInCents[i] - binStartingPointsInCents[i - 1];
         }
 
         // filter points that are too close
-        double minDistance = Config.getFloat(Key.NFFT_EVENT_POINT_MIN_DISTANCE);
-        float frameDurationInMS = Config.getInt(Key.NFFT_STEP_SIZE) / ((float) Config.getInt(Key.NFFT_SAMPLE_RATE))
-                * 1000.f;
+        float frameDurationInMS = nfftStepSize / ((float) nfftSampleRate) * 1000.f;
         List<NFFTEventPoint> pointsToDelete = new ArrayList<NFFTEventPoint>();
         for (int i = Math.max(eventPoints.size() - history, 0); i < eventPoints.size(); i++) {
 
@@ -265,7 +259,7 @@ public class NFFTEventPointProcessor implements AudioProcessor {
                 int diffInCents = (int) ((binStartingPointsInCents[first.f] + binHeightsInCents[first.f] / 2.0f)
                         - (binStartingPointsInCents[other.f] + binHeightsInCents[other.f] / 2.0f));
                 int distance = (int) Math.sqrt(diffInMS * diffInMS + diffInCents * diffInCents);
-                if (distance < minDistance) {
+                if (distance < nfftMinEventPointsDistance) {
                     pointsToDelete.add(first.contrast > other.contrast ? other : first);
                 }
             }
@@ -311,17 +305,15 @@ public class NFFTEventPointProcessor implements AudioProcessor {
     }
 
     private void packEventPointsIntoFingerprints() {
-        int size = Config.getInt(Key.NFFT_SIZE);
-        FFT fft = new FFT(size);
-        float[] binStartingPointsInCents = new float[size];
-        float[] binHeightsInCents = new float[size];
-        for (int i = 1; i < size; i++) {
+        FFT fft = new FFT(nfftSize);
+        float[] binStartingPointsInCents = new float[nfftSize];
+        float[] binHeightsInCents = new float[nfftSize];
+        for (int i = 1; i < nfftSize; i++) {
             binStartingPointsInCents[i] = (float) PitchConverter.hertzToAbsoluteCent(fft.binToHz(i, sampleRate));
             binHeightsInCents[i] = binStartingPointsInCents[i] - binStartingPointsInCents[i - 1];
         }
 
-        float frameDurationInMS = Config.getInt(Key.NFFT_STEP_SIZE) / ((float) Config.getInt(Key.NFFT_SAMPLE_RATE))
-                * 1000.f;
+        float frameDurationInMS = nfftStepSize / ((float) nfftSampleRate) * 1000.f;
 
         int maxEventPointDeltaTInMs = 2000; // two seconds
         int maxEventPointDeltaFInCents = 1800; // 1.5 octave
@@ -352,14 +344,14 @@ public class NFFTEventPointProcessor implements AudioProcessor {
             }
         }
 
-        int maxPrintsPerPoint = Config.getInt(Key.NFFT_MAX_FINGERPRINTS_PER_EVENT_POINT);
         HashMap<NFFTEventPoint, Integer> printsPerPoint = new HashMap<NFFTEventPoint, Integer>();
         for (int i = 0; i < eventPoints.size(); i++) {
             printsPerPoint.put(eventPoints.get(i), 0);
         }
         for (Float key : printsOrderedByEnergy.descendingKeySet()) {
             NFFTFingerprint print = printsOrderedByEnergy.get(key);
-            if (printsPerPoint.get(print.p1) < maxPrintsPerPoint && printsPerPoint.get(print.p2) < maxPrintsPerPoint) {
+            if (printsPerPoint.get(print.p1) < maxFingerprintsPerEventPoint
+                    && printsPerPoint.get(print.p2) < maxFingerprintsPerEventPoint) {
                 printsPerPoint.put(print.p1, printsPerPoint.get(print.p1) + 1);
                 printsPerPoint.put(print.p2, printsPerPoint.get(print.p2) + 1);
                 fingerprints.add(print);

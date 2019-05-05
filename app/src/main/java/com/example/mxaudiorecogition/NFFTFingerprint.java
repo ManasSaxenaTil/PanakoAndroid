@@ -1,6 +1,5 @@
 package com.example.mxaudiorecogition;
 
-
 import be.tarsos.dsp.util.PitchConverter;
 
 /**
@@ -23,7 +22,7 @@ public class NFFTFingerprint {
 
     public NFFTEventPoint p1, p2;
 
-    private boolean hashWithFrequencyEstimate = Config.getBoolean(Key.NFFT_USE_PHASE_REFINED_HASH);
+    public static boolean hashWithFrequencyEstimate = true;
 
     public double energy;
 

@@ -1,11 +1,5 @@
 package com.example.mxaudiorecogition;
 
-/**
- * An event point is a key point is a spectral representation of a signal. It is
- * defined by a time and frequency, using indexes, and it has an energy
- * (magnitude).
- *
- */
 public class NFFTEventPoint {
 
     /**
