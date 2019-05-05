@@ -1,12 +1,9 @@
 package com.example.mxaudiorecogition;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import android.text.TextUtils;
 
-import java.util.ArrayList;
+import java.io.File;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.io.PipeDecoder;
@@ -14,10 +11,6 @@ import be.tarsos.dsp.io.PipedAudioStream;
 import be.tarsos.dsp.io.jvm.AudioDispatcherFactory;
 
 public class FingerprintGenerator {
-
-    private String decoderEnvironment;
-
-    private String decoderArg;
 
     private String decoderCommand;
 
@@ -46,16 +39,6 @@ public class FingerprintGenerator {
         public FingerprintGeneratorBuilder() {
             super();
             fingerprintGenerator = new FingerprintGenerator();
-        }
-
-        public FingerprintGeneratorBuilder setDecoderEnvironment(String decoderEnvironment) {
-            fingerprintGenerator.decoderEnvironment = decoderEnvironment;
-            return this;
-        }
-
-        public FingerprintGeneratorBuilder setDecoderArg(String decoderArg) {
-            fingerprintGenerator.decoderArg = decoderArg;
-            return this;
         }
 
         public FingerprintGeneratorBuilder setDecoderCommand(String decoderCommand) {
@@ -90,14 +73,28 @@ public class FingerprintGenerator {
 
         @Override
         public FingerprintGenerator build() {
-            // @formatter:off
-            PipeDecoder decoder = new PipeDecoder(fingerprintGenerator.decoderEnvironment, 
-                                                  fingerprintGenerator.decoderArg, 
-                                                  fingerprintGenerator.decoderCommand, 
-                                                  null,
-                                                  fingerprintGenerator.decoderBufferSize);
-            // @formatter:on
-            PipedAudioStream.setDecoder(decoder);
+            String pipeEnvironment = null;
+            String pipeArgument = null;
+            if (System.getProperty("os.name").indexOf("indows") > 0) {
+                pipeEnvironment = "cmd.exe";
+                pipeArgument = "/C";
+            } else if (new File("/bin/bash").exists()) {
+                pipeEnvironment = "/bin/bash";
+                pipeArgument = "-c";
+            } else if (new File("/system/bin/sh").exists()) {
+                pipeEnvironment = "/system/bin/sh";
+                pipeArgument = "-c";
+            }
+            if (TextUtils.isEmpty(pipeEnvironment) && TextUtils.isEmpty(pipeArgument)) {
+                // @formatter:off
+                PipeDecoder decoder = new PipeDecoder(pipeEnvironment, 
+                                                      pipeArgument, 
+                                                      fingerprintGenerator.decoderCommand, 
+                                                      null,
+                                                      fingerprintGenerator.decoderBufferSize);
+                // @formatter:on
+                PipedAudioStream.setDecoder(decoder);
+            }
             return fingerprintGenerator;
         }
 
@@ -105,20 +102,13 @@ public class FingerprintGenerator {
 
     public List<NFFTFingerprint> getFingerprints(String resource) {
         int overlap = nfftSize - nfftStepSize;
-        //CompletableFuture<List<NFFTFingerprint>> fingerprintsAsync = CompletableFuture.supplyAsync(() -> {
             AudioDispatcher d = AudioDispatcherFactory.fromPipe(resource, nfftSampleRate, nfftSize, overlap);
             final NFFTEventPointProcessor minMaxProcessor = new NFFTEventPointProcessor(nfftSize, overlap,
                     nfftSampleRate);
             d.addAudioProcessor(minMaxProcessor);
             d.run();
             return minMaxProcessor.getFingerprints();
-      //  });
-        /*try {
-            return fingerprintsAsync.get(decoderTimeoutInSeconds, SECONDS);
-        } catch (InterruptedException | ExecutionException | TimeoutException e) {
-            Log.e("Timeout reached while generating fingerprints for resource: " + resource);
-            return new ArrayList<>();
-        }*/
+
     }
 
 }

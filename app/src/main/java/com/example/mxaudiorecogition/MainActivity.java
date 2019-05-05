@@ -2,6 +2,9 @@ package com.example.mxaudiorecogition;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ListActivity;
+import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -15,12 +18,15 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
+import be.tarsos.dsp.io.jvm.AudioDispatcherFactory;
+import be.tarsos.dsp.AudioDispatcher;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,16 +36,45 @@ public class MainActivity extends AppCompatActivity {
             .getAbsolutePath();
     private String path = downloadPath;
 
+    private static FingerprintGenerator fingerprintGenerator;
+
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         requestStoragePermission();
+        initializeSDK();
         new AndroidFFMPEGLocator(this);
         registerBrowseButtonListener();
         registerClipButtonListener();
         registerFingerprintGenerateButtonListener();
+
+    }
+
+    private void initializeSDK(){
+        fingerprintGenerator
+                = FingerprintGenerator
+                .newBuilder()
+                .setDecoderBufferSize(44100)
+                .setDecoderCommand("ffmpeg -ss %input_seeking%  %number_of_seconds% -i \"%resource%\" -vn -ar %sample_rate% -ac %channels% -sample_fmt s16 -f s16le pipe:1")
+                .setDecoderTimeoutInSeconds(1000)
+                .setNfftSampleRate(8000)
+                .setNfftSize(512)
+                .setNfftStepSize(256)
+                .build();
+
+        NFFTEventPointProcessor.defaultMaxFilterWindowSize = 15;
+        NFFTEventPointProcessor.defaultMinFilterWindowSize = 7;
+        NFFTEventPointProcessor.maxFingerprintsPerEventPoint = 2;
+        NFFTEventPointProcessor.maxEventPointsPerFrame = 3;
+        NFFTEventPointProcessor.nfftSize = 512;
+        NFFTEventPointProcessor.nfftStepSize = 256;
+        NFFTEventPointProcessor.nfftSampleRate = 8000;
+        NFFTEventPointProcessor.nfftMinEventPointsDistance = 600;
+
+        NFFTFingerprint.hashWithFrequencyEstimate = true;
 
     }
 
@@ -150,20 +185,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private List<NFFTFingerprint> query(String query) {
-        return
-        FingerprintGenerator
-                .newBuilder()
-                .setDecoderArg("-c")
-                .setDecoderBufferSize(44100)
-                .setDecoderCommand("ffmpeg -ss %input_seeking%  %number_of_seconds% -i \"%resource%\" -vn -ar %sample_rate% -ac %channels% -sample_fmt s16 -f s16le pipe:1")
-                .setDecoderEnvironment("/system/bin/sh")
-                //.setDecoderEnvironment("/bin/bash")
-                .setDecoderTimeoutInSeconds(1000)
-                .setNfftSampleRate(8000)
-                .setNfftSize(512)
-                .setNfftStepSize(256)
-                .build()
-                .getFingerprints(query);
+        return fingerprintGenerator.getFingerprints(query);
     }
 
 

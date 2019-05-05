@@ -69,14 +69,14 @@ public class NFFTEventPointProcessor implements AudioProcessor {
     private final float[] maxHorizontal;
     private final float[] minHorizontal;
 
-    public static int defaultMaxFilterWindowSize = 15;
-    public static int defaultMinFilterWindowSize = 7;
-    public static int maxFingerprintsPerEventPoint =2;
-    public static int maxEventPointsPerFrame =3;
-    public static int nfftSize = 512;
-    public static int nfftStepSize = 256;
-    public static int nfftSampleRate = 8000;
-    public static int nfftMinEventPointsDistance = 600;
+    public static int defaultMaxFilterWindowSize;
+    public static int defaultMinFilterWindowSize;
+    public static int maxFingerprintsPerEventPoint;
+    public static int maxEventPointsPerFrame;
+    public static int nfftSize;
+    public static int nfftStepSize;
+    public static int nfftSampleRate;
+    public static int nfftMinEventPointsDistance;
 
     public NFFTEventPointProcessor(int fftSize, int overlap, int sampleRate) {
         fft = new FFT(fftSize, new HammingWindow());

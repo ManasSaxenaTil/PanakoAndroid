@@ -22,7 +22,7 @@ public class NFFTFingerprint {
 
     public NFFTEventPoint p1, p2;
 
-    public static boolean hashWithFrequencyEstimate = true;
+    public static boolean hashWithFrequencyEstimate;
 
     public double energy;
 
