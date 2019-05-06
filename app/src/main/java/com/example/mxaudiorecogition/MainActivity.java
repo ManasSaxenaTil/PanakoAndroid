@@ -241,14 +241,13 @@ public class MainActivity extends AppCompatActivity {
 
     private List<FingerprintData> getAudioFingerprints(String sampleFileName) {
         List<String> files  = FileUtils.glob(downloadPath, sampleFileName, false);
-        List<List<FingerprintData>> result = new ArrayList<>();
-
-        List<FingerprintData>  fingerprints = query(files.get(0));
-
-        File fdelete = new File(downloadPath + "/" + sampleFileName);
-        fdelete.delete();
-
-        return fingerprints;
+        if(files != null && !files.isEmpty()){
+            List<FingerprintData> fingerprints = query(files.get(0));
+            File fdelete = new File(downloadPath + "/" + sampleFileName);
+            fdelete.delete();
+            return fingerprints;
+        }
+        return new ArrayList<>();
 
     }
 
@@ -275,15 +274,25 @@ public class MainActivity extends AppCompatActivity {
                 "-c",
                 "copy",
                 targetSongPath};
+        TextView output = (TextView)findViewById(R.id.textView3);
+
         ShellCommand sh = new ShellCommand();
         Process process = sh.run(cmd,null);
         while (true) {
-            try {
-                if (process.exitValue() == 0)
-                    break;
-            } catch (IllegalThreadStateException e) {
+            try{
+                if(process.exitValue() == 0){
+                    output.setText("Clip success ! Go ahead match your clip for recognition");
+                }
+                else{
+                    output.setText("Unsupported song format unable to clip");
+                    System.out.println(Util.convertInputStreamToString(process.getErrorStream()));
+                }
+                break;
+            }
+            catch (IllegalThreadStateException e){
                 // do nothing
             }
+
         }
         //FFcommandExecuteAsyncTask task = new FFcommandExecuteAsyncTask(cmd, null, Long.MAX_VALUE, null);
         //task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
