@@ -67,5 +67,5 @@ public class FingerprintData {
         builder.append("]");
         return builder.toString();
     }
-}
 
+}

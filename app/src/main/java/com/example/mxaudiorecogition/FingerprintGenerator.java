@@ -1,11 +1,12 @@
 package com.example.mxaudiorecogition;
 
-import android.text.TextUtils;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.example.mxaudiorecogition.ClientUtils.enrichDecoderCommand;
+import static com.example.mxaudiorecogition.ClientUtils.setPipeArtifacts;
 
-import java.io.File;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import be.tarsos.dsp.io.PipeDecoder;
 import be.tarsos.dsp.io.PipedAudioStream;
@@ -74,59 +75,44 @@ public class FingerprintGenerator {
 
         @Override
         public FingerprintGenerator build() {
-            String pipeEnvironment = null;
-            String pipeArgument = null;
-            if (System.getProperty("os.name").indexOf("indows") > 0) {
-                pipeEnvironment = "cmd.exe";
-                pipeArgument = "/C";
-            } else if (new File("/bin/bash").exists()) {
-                pipeEnvironment = "/bin/bash";
-                pipeArgument = "-c";
-            } else if (new File("/system/bin/sh").exists()) {
-                pipeEnvironment = "/system/bin/sh";
-                pipeArgument = "-c";
-            }
+            setPipedDecoder();
+            return fingerprintGenerator;
+        }
 
-            String var5 = System.getProperty("java.io.tmpdir");
-            String decoderBinaryAbsolutePath = fingerprintGenerator.decoderCommand;
-            File var4 = new File(var5, "ffmpeg");
-            if (var4.exists() && var4.length() > 1000000L && var4.canExecute()) {
-                 decoderBinaryAbsolutePath = var4.getAbsolutePath() + fingerprintGenerator.decoderCommand;
-            }
-
-
-
+        private void setPipedDecoder() {
+            String[] artifacts = setPipeArtifacts();
+            String pipeEnvironment = artifacts[0];
+            String pipeArgument = artifacts[1];
+            String decoderCommand = enrichDecoderCommand(fingerprintGenerator.decoderCommand);
             if (pipeEnvironment != null) {
                 // @formatter:off
                 PipeDecoder decoder = new PipeDecoder(pipeEnvironment, 
-                                                      pipeArgument,
-                                                    decoderBinaryAbsolutePath,
+                                                      pipeArgument, 
+                                                      decoderCommand, 
                                                       null,
                                                       fingerprintGenerator.decoderBufferSize);
-
-
-
                 // @formatter:on
                 PipedAudioStream.setDecoder(decoder);
             }
-            return fingerprintGenerator;
         }
 
     }
 
-    public List<NFFTFingerprint> getFingerprints(String resource) throws TimeoutException {
+    public List<FingerprintData> getFingerprints(String resource) throws TimeoutException {
         int overlap = nfftSize - nfftStepSize;
-
-        PipedAudioStream var6 = new PipedAudioStream(resource);
-        TarsosDSPAudioInputStream audioStream = var6.getMonoStream(nfftSampleRate, 0);
+        PipedAudioStream pipedAudioStream = new PipedAudioStream(resource);
+        TarsosDSPAudioInputStream audioStream = pipedAudioStream.getMonoStream(nfftSampleRate, 0);
         TimedAudioDispatcher d = new TimedAudioDispatcher(audioStream, nfftSize, overlap);
-
-        final NFFTEventPointProcessor minMaxProcessor = new NFFTEventPointProcessor(nfftSize, overlap,
-                nfftSampleRate);
+        final NFFTEventPointProcessor minMaxProcessor = new NFFTEventPointProcessor(nfftSize, overlap, nfftSampleRate);
         d.addAudioProcessor(minMaxProcessor);
-        d.run(decoderTimeoutInSeconds, TimeUnit.SECONDS);
-        return minMaxProcessor.getFingerprints();
-
+        d.run(decoderTimeoutInSeconds, SECONDS);
+        // @formatter:off
+        return minMaxProcessor
+                   .getFingerprints()
+                   .stream()
+                   .map(f -> new FingerprintData(f.hash(), f.t1))
+                   .collect(Collectors.toList());
+        // @formatter:on
     }
 
 }

@@ -2,14 +2,6 @@ package com.example.mxaudiorecogition;
 
 import be.tarsos.dsp.util.PitchConverter;
 
-/**
- * A fingerprint connects two event points in a spectrogram. The points are
- * defined by a time and frequency pair, both encoded with an integer. The
- * frequency is defined by the bin index in the spectrogram. The time is defined
- * as the index of the block processed.
- * 
- * @author Joren Six
- */
 public class NFFTFingerprint {
 
     public final int t1;
@@ -20,13 +12,15 @@ public class NFFTFingerprint {
     public final int f2;
     public final double f2Estimate;
 
-    public NFFTEventPoint p1, p2;
+    public NFFTEventPoint p1;
+
+    public NFFTEventPoint p2;
 
     public static boolean hashWithFrequencyEstimate;
 
     public double energy;
 
-    public NFFTFingerprint(int t1, int f1, float f1Estimate, int t2, int f2, float f2Estimate) {
+    private NFFTFingerprint(int t1, int f1, float f1Estimate, int t2, int f2, float f2Estimate) {
         this.t1 = t1;
         this.f1 = f1;
 

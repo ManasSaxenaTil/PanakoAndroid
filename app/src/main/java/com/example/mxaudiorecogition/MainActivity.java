@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
                 = FingerprintGenerator
                 .newBuilder()
                 .setDecoderBufferSize(44100)
-                .setDecoderCommand(" -ss %input_seeking%  %number_of_seconds% -i \"%resource%\" -vn -ar %sample_rate% -ac %channels% -sample_fmt s16 -f s16le pipe:1")
+                .setDecoderCommand("ffmpeg -ss %input_seeking%  %number_of_seconds% -i \"%resource%\" -vn -ar %sample_rate% -ac %channels% -sample_fmt s16 -f s16le pipe:1")
                 .setDecoderTimeoutInSeconds(1000)
                 .setNfftSampleRate(8000)
                 .setNfftSize(512)
@@ -156,8 +156,19 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //TODO: clip the audio syncrhonously here
-               // List<List<NFFTFingerprint>> result = getAudioFingerprints();
-                //TextView printFingerprint = (TextView)findViewById(R.id.textView3);
+               //
+                EditText fromSeconds = (EditText) findViewById(R.id.editText);
+                EditText endSeconds = (EditText) findViewById(R.id.editText2);
+                EditText srcSongPath = (EditText) findViewById(R.id.editText3);
+                clipSong(fromSeconds.getText().toString(),
+                        endSeconds.getText().toString(),
+                        srcSongPath.getText().toString(),
+                        AndroidFFMPEGLocator.ffmpegTargetLocation().getAbsolutePath());
+
+                List<FingerprintData> result = getAudioFingerprints();
+                TextView printFingerprint = (TextView)findViewById(R.id.textView3);
+
+
 
                 List<FingerprintData> fingerprints = null;
                         //result.get(0).stream().map(f-> new FingerprintData(f.hash(),f.t1)).collect(Collectors.toList());
@@ -211,18 +222,15 @@ public class MainActivity extends AppCompatActivity {
     }*/
 
 
-    private List<List<NFFTFingerprint>> getAudioFingerprints() {
+    private List<FingerprintData> getAudioFingerprints() {
         List<String> files  = FileUtils.glob(downloadPath, sampleFileName, false);
-        List<List<NFFTFingerprint>> result = new ArrayList<>();
+        List<List<FingerprintData>> result = new ArrayList<>();
 
-        for(String x : files){
+        return query(files.get(0));
 
-            result.add(query(x));
-        }
-        return result;
     }
 
-    private List<NFFTFingerprint> query(String query) {
+    private List<FingerprintData> query(String query) {
         try {
             return fingerprintGenerator.getFingerprints(query);
         } catch (TimeoutException e) {
