@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
+
 import be.tarsos.dsp.io.jvm.AudioDispatcherFactory;
 import be.tarsos.dsp.AudioDispatcher;
 
@@ -185,7 +187,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private List<NFFTFingerprint> query(String query) {
-        return fingerprintGenerator.getFingerprints(query);
+        try {
+            return fingerprintGenerator.getFingerprints(query);
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 
 

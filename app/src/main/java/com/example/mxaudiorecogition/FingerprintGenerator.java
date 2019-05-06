@@ -4,11 +4,12 @@ import android.text.TextUtils;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
-import be.tarsos.dsp.AudioDispatcher;
 import be.tarsos.dsp.io.PipeDecoder;
 import be.tarsos.dsp.io.PipedAudioStream;
-import be.tarsos.dsp.io.jvm.AudioDispatcherFactory;
+import be.tarsos.dsp.io.TarsosDSPAudioInputStream;
 
 public class FingerprintGenerator {
 
@@ -100,14 +101,18 @@ public class FingerprintGenerator {
 
     }
 
-    public List<NFFTFingerprint> getFingerprints(String resource) {
+    public List<NFFTFingerprint> getFingerprints(String resource) throws TimeoutException {
         int overlap = nfftSize - nfftStepSize;
-            AudioDispatcher d = AudioDispatcherFactory.fromPipe(resource, nfftSampleRate, nfftSize, overlap);
-            final NFFTEventPointProcessor minMaxProcessor = new NFFTEventPointProcessor(nfftSize, overlap,
-                    nfftSampleRate);
-            d.addAudioProcessor(minMaxProcessor);
-            d.run();
-            return minMaxProcessor.getFingerprints();
+
+        PipedAudioStream var6 = new PipedAudioStream(resource);
+        TarsosDSPAudioInputStream audioStream = var6.getMonoStream(nfftSampleRate, 0);
+        TimedAudioDispatcher d = new TimedAudioDispatcher(audioStream, nfftSize, overlap);
+
+        final NFFTEventPointProcessor minMaxProcessor = new NFFTEventPointProcessor(nfftSize, overlap,
+                nfftSampleRate);
+        d.addAudioProcessor(minMaxProcessor);
+        d.run(decoderTimeoutInSeconds, TimeUnit.SECONDS);
+        return minMaxProcessor.getFingerprints();
 
     }
 
