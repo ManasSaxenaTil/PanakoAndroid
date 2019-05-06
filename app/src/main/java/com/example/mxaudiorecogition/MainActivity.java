@@ -281,20 +281,28 @@ public class MainActivity extends AppCompatActivity {
                 "-c",
                 "copy",
                 targetSongPath};
+
+        TextView output = (TextView)findViewById(R.id.textView3);
+
         ShellCommand sh = new ShellCommand();
         Process process = sh.run(cmd,null);
         while (true) {
             try{
-                if(process.exitValue() == 0)
-                    break;
+                if(process.exitValue() == 0){
+                    output.setText("Clip success ! Go ahead match your clip for recognition");
+                }
+                else{
+                    output.setText("Unsupported song format unable to clip");
+                    System.out.println(Util.convertInputStreamToString(process.getErrorStream()));
+                }
+                break;
             }
             catch (IllegalThreadStateException e){
                 // do nothing
             }
 
         }
-        TextView output = (TextView)findViewById(R.id.textView3);
-        output.setText("Clip success ! Go ahead generate finger prints");
+
 
 
 
