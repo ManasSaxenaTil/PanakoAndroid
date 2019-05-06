@@ -54,7 +54,7 @@
     <TextView
         android:id="@+id/textView3"
         android:layout_width="match_parent"
-        android:layout_height="91dp"
+        android:layout_height="408dp"
         android:text="" />
 
 </LinearLayout>
