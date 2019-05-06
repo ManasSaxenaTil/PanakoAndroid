@@ -24,10 +24,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
@@ -286,21 +282,17 @@ public class MainActivity extends AppCompatActivity {
                 "copy",
                 targetSongPath};
         ShellCommand sh = new ShellCommand();
+        Process process = sh.run(cmd,null);
+        while (true) {
+            try{
+                if(process.exitValue() == 0)
+                    break;
+            }
+            catch (IllegalThreadStateException e){
+                // do nothing
+            }
 
-        ExecutorService service = Executors.newSingleThreadExecutor();
-        try {
-            service.submit(() -> sh.run(cmd,null)).get(500 , TimeUnit.SECONDS);
-        } catch (TimeoutException | InterruptedException | ExecutionException e) {
-            System.out.println("TIMEOUT WHILE CLIPPING");
         }
-
-        File song = new File(downloadPath + "/" + sampleFileName);
-
-        while(!song.exists()){
-            //Wait till file exists
-            song = new File(downloadPath + "/" + sampleFileName);
-        }
-
         TextView output = (TextView)findViewById(R.id.textView3);
         output.setText("Clip success ! Go ahead generate finger prints");
 
