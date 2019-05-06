@@ -208,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
             AudioQueryRequest request = new AudioQueryRequest(fingerprints);
             String jsonString = new Gson().toJson(request);
             System.out.println("sending data to server with fingerprint " + jsonString);
-            response = caller.post("http://10.84.27.13:8082/v1/audio/query",jsonString);
+            response = caller.post("http://192.168.43.228:8082/v1/audio/query",jsonString);
             System.out.println("received response from server for matched fingerprint " + response);
 
 
@@ -276,12 +276,14 @@ public class MainActivity extends AppCompatActivity {
                 "copy",
                 targetSongPath};
         ShellCommand sh = new ShellCommand();
-
-        ExecutorService service = Executors.newSingleThreadExecutor();
-        try {
-            service.submit(() -> sh.run(cmd,null)).get(500 , TimeUnit.SECONDS);
-        } catch (TimeoutException | InterruptedException | ExecutionException e) {
-            Log.e("TIMEOUT WHILE CLIPPING");
+        Process process = sh.run(cmd,null);
+        while (true) {
+            try {
+                if (process.exitValue() == 0)
+                    break;
+            } catch (IllegalThreadStateException e) {
+                // do nothing
+            }
         }
         //FFcommandExecuteAsyncTask task = new FFcommandExecuteAsyncTask(cmd, null, Long.MAX_VALUE, null);
         //task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
