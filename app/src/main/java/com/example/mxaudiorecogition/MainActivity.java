@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,19 +48,16 @@ import be.tarsos.dsp.AudioDispatcher;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String sampleFileName = "testsample.mp3";
-    private static final String downloadPath = Environment
-            .getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            .getAbsolutePath();
-    private String path = downloadPath;
-
+    private  String downloadPath = "";
     private static FingerprintGenerator fingerprintGenerator;
-
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        downloadPath = this.getCacheDir().getAbsolutePath();
+        new AndroidFFMPEGLocator(this);
+
         int SDK_INT = android.os.Build.VERSION.SDK_INT;
         if (SDK_INT > 8)
         {
@@ -70,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         requestStoragePermission();
         initializeSDK();
-        new AndroidFFMPEGLocator(this);
         registerBrowseButtonListener();
         //registerClipButtonListener();
         registerFingerprintMatcherListener();
@@ -136,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
-                intent.setType("audio/*");
+                intent.setType("*/*");
                 startActivityForResult(Intent.createChooser(intent, "Select file"), 1);
             }
         });
@@ -178,12 +175,14 @@ public class MainActivity extends AppCompatActivity {
                 EditText fromSeconds = (EditText) findViewById(R.id.editText);
                 EditText endSeconds = (EditText) findViewById(R.id.editText2);
                 EditText srcSongPath = (EditText) findViewById(R.id.editText3);
+
+                String sampleFileName = UUID.randomUUID().toString() + ".mp3";
                 clipSong(fromSeconds.getText().toString(),
                         endSeconds.getText().toString(),
                         srcSongPath.getText().toString(),
-                        AndroidFFMPEGLocator.ffmpegTargetLocation().getAbsolutePath());
+                        AndroidFFMPEGLocator.ffmpegTargetLocation().getAbsolutePath(),sampleFileName);
 
-                List<FingerprintData> result = getAudioFingerprints();
+                List<FingerprintData> result = getAudioFingerprints(sampleFileName);
                 TextView printFingerprint = (TextView)findViewById(R.id.textView3);
 
                 String remoteResponse = matchFingerprintFromServer(result);
@@ -240,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
     }*/
 
 
-    private List<FingerprintData> getAudioFingerprints() {
+    private List<FingerprintData> getAudioFingerprints(String sampleFileName) {
         List<String> files  = FileUtils.glob(downloadPath, sampleFileName, false);
         List<List<FingerprintData>> result = new ArrayList<>();
 
@@ -263,7 +262,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void clipSong(String startTime, String endTime, String srcSongPath ,String ffmpegDestination){
+    private void clipSong(String startTime, String endTime, String srcSongPath ,String ffmpegDestination, String sampleFileName){
         String targetSongPath = downloadPath + "/" + sampleFileName;
         String[] cmd = {
                 ffmpegDestination,
