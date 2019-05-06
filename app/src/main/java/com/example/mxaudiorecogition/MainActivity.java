@@ -35,6 +35,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -184,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
 
                 String remoteResponse = matchFingerprintFromServer(result);
                 String displayMessage = null;
-                if(remoteResponse!=null && !remoteResponse.isEmpty()){
+                if(remoteResponse!=null && remoteResponse.isEmpty()){
                     //TODO: convert to Track pojo and display relevant info
                     displayMessage = "No match found from server";
                 } else {
@@ -192,8 +196,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 printFingerprint.setText(displayMessage);
-                File fdelete = new File(downloadPath + "/" + sampleFileName);
-                fdelete.delete();
+
             }
         });
     }
@@ -241,7 +244,12 @@ public class MainActivity extends AppCompatActivity {
         List<String> files  = FileUtils.glob(downloadPath, sampleFileName, false);
         List<List<FingerprintData>> result = new ArrayList<>();
 
-        return query(files.get(0));
+        List<FingerprintData>  fingerprints = query(files.get(0));
+
+        File fdelete = new File(downloadPath + "/" + sampleFileName);
+        fdelete.delete();
+
+        return fingerprints;
 
     }
 
@@ -268,7 +276,15 @@ public class MainActivity extends AppCompatActivity {
                 "-c",
                 "copy",
                 targetSongPath};
-        FFcommandExecuteAsyncTask task = new FFcommandExecuteAsyncTask(cmd, null, Long.MAX_VALUE, null);
-        task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        ShellCommand sh = new ShellCommand();
+
+        ExecutorService service = Executors.newSingleThreadExecutor();
+        try {
+            service.submit(() -> sh.run(cmd,null)).get(500 , TimeUnit.SECONDS);
+        } catch (TimeoutException | InterruptedException | ExecutionException e) {
+            Log.e("TIMEOUT WHILE CLIPPING");
+        }
+        //FFcommandExecuteAsyncTask task = new FFcommandExecuteAsyncTask(cmd, null, Long.MAX_VALUE, null);
+        //task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 }
