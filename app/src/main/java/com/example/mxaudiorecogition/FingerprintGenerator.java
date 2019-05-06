@@ -86,13 +86,26 @@ public class FingerprintGenerator {
                 pipeEnvironment = "/system/bin/sh";
                 pipeArgument = "-c";
             }
-            if (TextUtils.isEmpty(pipeEnvironment) && TextUtils.isEmpty(pipeArgument)) {
+
+            String var5 = System.getProperty("java.io.tmpdir");
+            String decoderBinaryAbsolutePath = fingerprintGenerator.decoderCommand;
+            File var4 = new File(var5, "ffmpeg");
+            if (var4.exists() && var4.length() > 1000000L && var4.canExecute()) {
+                 decoderBinaryAbsolutePath = var4.getAbsolutePath() + fingerprintGenerator.decoderCommand;
+            }
+
+
+
+            if (pipeEnvironment != null) {
                 // @formatter:off
                 PipeDecoder decoder = new PipeDecoder(pipeEnvironment, 
-                                                      pipeArgument, 
-                                                      fingerprintGenerator.decoderCommand, 
+                                                      pipeArgument,
+                                                    decoderBinaryAbsolutePath,
                                                       null,
                                                       fingerprintGenerator.decoderBufferSize);
+
+
+
                 // @formatter:on
                 PipedAudioStream.setDecoder(decoder);
             }

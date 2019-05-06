@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
                 = FingerprintGenerator
                 .newBuilder()
                 .setDecoderBufferSize(44100)
-                .setDecoderCommand("ffmpeg -ss %input_seeking%  %number_of_seconds% -i \"%resource%\" -vn -ar %sample_rate% -ac %channels% -sample_fmt s16 -f s16le pipe:1")
+                .setDecoderCommand(" -ss %input_seeking%  %number_of_seconds% -i \"%resource%\" -vn -ar %sample_rate% -ac %channels% -sample_fmt s16 -f s16le pipe:1")
                 .setDecoderTimeoutInSeconds(1000)
                 .setNfftSampleRate(8000)
                 .setNfftSize(512)
