@@ -2,9 +2,6 @@ package com.example.mxaudiorecogition;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.ListActivity;
-import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -18,17 +15,12 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-
-import be.tarsos.dsp.io.jvm.AudioDispatcherFactory;
-import be.tarsos.dsp.AudioDispatcher;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -145,7 +137,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View view) {
-                List<List<NFFTFingerprint>> result = getAudioFingerprints();
+                List<List<FingerprintData>> result = getAudioFingerprints();
                 TextView printFingerprint = (TextView)findViewById(R.id.textView3);
                 printFingerprint.setText(result.toString());
                 File fdelete = new File(downloadPath + "/" + sampleFileName);
@@ -175,9 +167,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private List<List<NFFTFingerprint>> getAudioFingerprints() {
+    private List<List<FingerprintData>> getAudioFingerprints() {
         List<String> files  = FileUtils.glob(downloadPath, sampleFileName, false);
-        List<List<NFFTFingerprint>> result = new ArrayList<>();
+        List<List<FingerprintData>> result = new ArrayList<>();
 
         for(String x : files){
 
@@ -186,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    private List<NFFTFingerprint> query(String query) {
+    private List<FingerprintData> query(String query) {
         try {
             return fingerprintGenerator.getFingerprints(query);
         } catch (TimeoutException e) {
