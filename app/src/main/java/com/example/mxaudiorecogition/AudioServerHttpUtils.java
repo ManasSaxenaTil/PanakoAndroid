@@ -2,7 +2,7 @@ package com.example.mxaudiorecogition;
 import com.loopj.android.http.*;
 
 public class AudioServerHttpUtils {
-    private static final String BASE_URL = "http://localhost.com/1/";
+    private static final String BASE_URL = "http://localhost:8082/v1/audio";
 
     private static AsyncHttpClient client = new AsyncHttpClient();
 

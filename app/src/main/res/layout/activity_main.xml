@@ -46,16 +46,10 @@
         android:text="20" />
 
     <Button
-        android:id="@+id/button3"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Clip Song" />
-
-    <Button
         android:id="@+id/button2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Generate finger print" />
+        android:text="Match audioclip" />
 
     <TextView
         android:id="@+id/textView3"

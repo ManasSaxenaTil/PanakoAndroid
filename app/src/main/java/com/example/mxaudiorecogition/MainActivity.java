@@ -1,6 +1,7 @@
 package com.example.mxaudiorecogition;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ListActivity;
 import android.content.ContentResolver;
@@ -20,15 +21,23 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import be.tarsos.dsp.io.jvm.AudioDispatcherFactory;
 import be.tarsos.dsp.AudioDispatcher;
+import cz.msebera.android.httpclient.Header;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -50,8 +59,8 @@ public class MainActivity extends AppCompatActivity {
         initializeSDK();
         new AndroidFFMPEGLocator(this);
         registerBrowseButtonListener();
-        registerClipButtonListener();
-        registerFingerprintGenerateButtonListener();
+        //registerClipButtonListener();
+        registerFingerprintMatcherListener();
 
     }
 
@@ -139,25 +148,52 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Register listener for generate finger print button
      */
-    private void registerFingerprintGenerateButtonListener() {
+    @SuppressLint("NewApi")
+    private void registerFingerprintMatcherListener() {
         Button generateFingerPrints = (Button) findViewById(R.id.button2);
         generateFingerPrints.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View view) {
-                List<List<NFFTFingerprint>> result = getAudioFingerprints();
-                TextView printFingerprint = (TextView)findViewById(R.id.textView3);
-                printFingerprint.setText(result.toString());
-                File fdelete = new File(downloadPath + "/" + sampleFileName);
-                fdelete.delete();
+                //TODO: clip the audio syncrhonously here
+               // List<List<NFFTFingerprint>> result = getAudioFingerprints();
+                //TextView printFingerprint = (TextView)findViewById(R.id.textView3);
+
+                List<FingerprintData> fingerprints = null;
+                        //result.get(0).stream().map(f-> new FingerprintData(f.hash(),f.t1)).collect(Collectors.toList());
+                String output = matchFingerprintFromServer(fingerprints);
+
+                //printFingerprint.setText(result.toString());
+                //File fdelete = new File(downloadPath + "/" + sampleFileName);
+                //fdelete.delete();
             }
         });
+    }
+
+    private String matchFingerprintFromServer(List<FingerprintData> fingerprints) {
+        RequestParams rp = new RequestParams();
+
+        AudioServerHttpUtils.get("/config", rp, new JsonHttpResponseHandler() {
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                // If the response is JSONObject instead of expected JSONArray
+                System.out.println("received response from config: " + response);
+
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                // If the response is JSONObject instead of expected JSONArray
+                System.out.println("received response from config: " + errorResponse);
+
+            }
+        });
+        return null;
     }
 
     /**
      * Register listener for clip song button
      */
-    private void registerClipButtonListener() {
+    /*private void registerClipButtonListener() {
         Button clipSongButton = (Button)findViewById(R.id.button3);
         clipSongButton.setOnClickListener(new View.OnClickListener(){
             @Override
@@ -172,7 +208,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
-    }
+    }*/
 
 
     private List<List<NFFTFingerprint>> getAudioFingerprints() {
