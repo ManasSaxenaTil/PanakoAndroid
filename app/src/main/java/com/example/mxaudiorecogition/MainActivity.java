@@ -8,10 +8,12 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StrictMode;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -21,9 +23,10 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.loopj.android.http.JsonHttpResponseHandler;
-import com.loopj.android.http.RequestParams;
 
+import com.google.gson.Gson;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -37,7 +40,6 @@ import java.util.stream.Collectors;
 
 import be.tarsos.dsp.io.jvm.AudioDispatcherFactory;
 import be.tarsos.dsp.AudioDispatcher;
-import cz.msebera.android.httpclient.Header;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -54,6 +56,13 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        int SDK_INT = android.os.Build.VERSION.SDK_INT;
+        if (SDK_INT > 8)
+        {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
+                    .permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
         setContentView(R.layout.activity_main);
         requestStoragePermission();
         initializeSDK();
@@ -132,7 +141,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestStoragePermission(){
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-            || ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED){
+            || ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET) != PackageManager.PERMISSION_GRANTED
+        ){
 
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
@@ -142,6 +153,9 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     2);
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.INTERNET},
+                    3);
         }
     }
 
@@ -168,37 +182,38 @@ public class MainActivity extends AppCompatActivity {
                 List<FingerprintData> result = getAudioFingerprints();
                 TextView printFingerprint = (TextView)findViewById(R.id.textView3);
 
+                String remoteResponse = matchFingerprintFromServer(result);
+                String displayMessage = null;
+                if(remoteResponse!=null && !remoteResponse.isEmpty()){
+                    //TODO: convert to Track pojo and display relevant info
+                    displayMessage = "No match found from server";
+                } else {
+                    displayMessage = remoteResponse;
+                }
 
-
-                List<FingerprintData> fingerprints = null;
-                        //result.get(0).stream().map(f-> new FingerprintData(f.hash(),f.t1)).collect(Collectors.toList());
-                String output = matchFingerprintFromServer(fingerprints);
-
-                //printFingerprint.setText(result.toString());
-                //File fdelete = new File(downloadPath + "/" + sampleFileName);
-                //fdelete.delete();
+                printFingerprint.setText(displayMessage);
+                File fdelete = new File(downloadPath + "/" + sampleFileName);
+                fdelete.delete();
             }
         });
     }
 
     private String matchFingerprintFromServer(List<FingerprintData> fingerprints) {
-        RequestParams rp = new RequestParams();
+        RemoteCaller caller = new RemoteCaller();
+        String response =  null;
+        try {
 
-        AudioServerHttpUtils.get("/config", rp, new JsonHttpResponseHandler() {
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-                // If the response is JSONObject instead of expected JSONArray
-                System.out.println("received response from config: " + response);
+            AudioQueryRequest request = new AudioQueryRequest(fingerprints);
+            String jsonString = new Gson().toJson(request);
+            System.out.println("sending data to server with fingerprint " + jsonString);
+            response = caller.post("http://10.84.27.13:8082/v1/audio/query",jsonString);
+            System.out.println("received response from server for matched fingerprint " + response);
 
-            }
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                // If the response is JSONObject instead of expected JSONArray
-                System.out.println("received response from config: " + errorResponse);
 
-            }
-        });
-        return null;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return response;
     }
 
     /**
