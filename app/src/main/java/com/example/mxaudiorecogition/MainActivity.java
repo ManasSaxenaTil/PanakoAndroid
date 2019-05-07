@@ -231,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
             AudioQueryRequest request = new AudioQueryRequest(fingerprints);
             String jsonString = new Gson().toJson(request);
             System.out.println("sending data to server with fingerprint " + jsonString);
-            String response = caller.post("http://10.84.24.57:8082/v1/audio/query",jsonString);
+            String response = caller.post("https://mxaudio.dev.mxplay.com/v1/audio/query",jsonString);
             System.out.println("received response from server for matched fingerprint " + response);
             track = new Gson().fromJson(response,Track.class);
 
