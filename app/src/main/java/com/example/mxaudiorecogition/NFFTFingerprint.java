@@ -16,7 +16,7 @@ public class NFFTFingerprint {
 
     public NFFTEventPoint p2;
 
-    public static boolean hashWithFrequencyEstimate;
+    public boolean hashWithFrequencyEstimate;
 
     public double energy;
 
@@ -29,6 +29,8 @@ public class NFFTFingerprint {
 
         if (f1Estimate == 0 || f2Estimate == 0) {
             hashWithFrequencyEstimate = false;
+        }else {
+            hashWithFrequencyEstimate = true;
         }
 
         if (hashWithFrequencyEstimate) {

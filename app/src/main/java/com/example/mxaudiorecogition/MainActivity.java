@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         NFFTEventPointProcessor.nfftSampleRate = 8000;
         NFFTEventPointProcessor.nfftMinEventPointsDistance = 600;
 
-        NFFTFingerprint.hashWithFrequencyEstimate = true;
+        //NFFTFingerprint.hashWithFrequencyEstimate = true;
 
     }
 
@@ -213,7 +213,7 @@ public class MainActivity extends AppCompatActivity {
             File song = new File(downloadPath + "/" + sampleFileName);
             boolean songExist = song.exists();
 
-            System.out.println("THe song exists?"+songExist);
+            System.out.println("The song exists?"+songExist);
 
             EditText songFullPath = (EditText)findViewById(R.id.editText3);
             String sourceSong = songFullPath.getText().toString();
