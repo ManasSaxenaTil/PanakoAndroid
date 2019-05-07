@@ -186,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 printFingerprint.setText(Html.fromHtml(displayMessage,Html.FROM_HTML_MODE_COMPACT));
+                mp.reset();
 
             }
         });
