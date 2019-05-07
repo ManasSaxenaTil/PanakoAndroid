@@ -32,6 +32,8 @@ public class MainActivity extends AppCompatActivity {
     private String downloadPath = "";
     private static FingerprintGenerator fingerprintGenerator;
     private String sampleFileName = "";
+    private MediaPlayer mp = new MediaPlayer();
+
 
 
     @Override
@@ -203,7 +205,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void playSong(){
-        MediaPlayer mp = new MediaPlayer();
         try{
             File song = new File(downloadPath + "/" + sampleFileName);
             boolean songExist = song.exists();
@@ -213,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
             EditText songFullPath = (EditText)findViewById(R.id.editText3);
             String sourceSong = songFullPath.getText().toString();
             mp.reset();
+
             mp.setDataSource(downloadPath + "/" + sampleFileName);
             mp.prepare();
             mp.start();
