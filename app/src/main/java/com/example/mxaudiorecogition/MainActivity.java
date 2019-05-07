@@ -13,6 +13,8 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
+import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -171,6 +173,8 @@ public class MainActivity extends AppCompatActivity {
 
                 List<FingerprintData> result = getAudioFingerprints();
                 TextView printFingerprint = (TextView)findViewById(R.id.textView3);
+                printFingerprint.setClickable(true);
+                printFingerprint.setMovementMethod (LinkMovementMethod.getInstance());
 
                 Track matchedTrack = matchFingerprintFromServer(result);
                 String displayMessage = "";
@@ -190,17 +194,15 @@ public class MainActivity extends AppCompatActivity {
     private String getHtmlFormattedTrackResponse(Track matchedTrack) {
         String formattedResponse ="";
         formattedResponse += "<h2>" + " Song: <font color=\'#3c8cf0\'>" + matchedTrack.getTrackTitle() +" </font></h2>";
-        formattedResponse += "<br> <h3 >" +" Albumn: <font color=\'#3c8cf0\'>" + matchedTrack.getAlbumTitle() +"</font> </h3>";
+        formattedResponse += "<br> <h3 >" +" Album: <font color=\'#3c8cf0\'>" + matchedTrack.getAlbumTitle() +"</font> </h3>";
         String genres= "", artists ="";
-        for(Genre genre: matchedTrack.getGeners()){
-            genres +=", "+ genre.getName();
-        }
-        for(Artist artist: matchedTrack.getArtists()){
-            artists += ", "+ artist.getName();
-        }
+
+        artists = TextUtils.join(", ",matchedTrack.getArtists());
+        genres = TextUtils.join(", ",matchedTrack.getGeners());
+
         formattedResponse += "<br> <h4 >" +" Genre: <font color=\'#3c8cf0\'>" + genres +"</font></h4>";
         formattedResponse += "<br> <h4 >" +" Artist: <font color=\'#3c8cf0\'>" + artists +"</font></h4>";
-
+        formattedResponse += "<br> <a href=\"" + "https://www.youtube.com/watch?v=" + matchedTrack.getYoutubeId() + "\"> Watch Video</a>";
         return formattedResponse;
 
     }
