@@ -43,7 +43,7 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="textPersonName"
-        android:text="30" />
+        android:text="40" />
 
     <Button
         android:id="@+id/button3"
