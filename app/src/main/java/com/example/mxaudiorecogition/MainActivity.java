@@ -12,6 +12,7 @@ import android.os.StrictMode;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -168,19 +169,37 @@ public class MainActivity extends AppCompatActivity {
                 List<FingerprintData> result = getAudioFingerprints();
                 TextView printFingerprint = (TextView)findViewById(R.id.textView3);
 
-                String remoteResponse = matchFingerprintFromServer(result);
-                String displayMessage = null;
-                if(remoteResponse!=null && remoteResponse.isEmpty()){
-                    //TODO: convert to Track pojo and display relevant info
-                    displayMessage = "No match found from server";
+                Track matchedTrack = matchFingerprintFromServer(result);
+                String displayMessage = "";
+
+                if(matchedTrack==null || (matchedTrack.getTrackTitle()==null && matchedTrack.getSeokey()==null)){
+                    displayMessage = "<h2 color=red>No match found from server</h2>";
                 } else {
-                    displayMessage = remoteResponse;
+                    displayMessage = getHtmlFormattedTrackResponse(matchedTrack);
                 }
 
-                printFingerprint.setText(displayMessage);
+                printFingerprint.setText(Html.fromHtml(displayMessage,Html.FROM_HTML_MODE_COMPACT));
 
             }
         });
+    }
+
+    private String getHtmlFormattedTrackResponse(Track matchedTrack) {
+        String formattedResponse ="";
+        formattedResponse += "<h2>" + " Song: <font color=\'#3c8cf0\'>" + matchedTrack.getTrackTitle() +" </font></h2>";
+        formattedResponse += "<br> <h3 >" +" Albumn: <font color=\'#3c8cf0\'>" + matchedTrack.getAlbumTitle() +"</font> </h3>";
+        String genres= "", artists ="";
+        for(Genre genre: matchedTrack.getGeners()){
+            genres +=", "+ genre.getName();
+        }
+        for(Artist artist: matchedTrack.getArtists()){
+            artists += ", "+ artist.getName();
+        }
+        formattedResponse += "<br> <h4 >" +" Genre: <font color=\'#3c8cf0\'>" + genres +"</font></h4>";
+        formattedResponse += "<br> <h4 >" +" Artist: <font color=\'#3c8cf0\'>" + artists +"</font></h4>";
+
+        return formattedResponse;
+
     }
 
     private void playSong(){
@@ -204,22 +223,24 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private String matchFingerprintFromServer(List<FingerprintData> fingerprints) {
+    private Track matchFingerprintFromServer(List<FingerprintData> fingerprints) {
         RemoteCaller caller = new RemoteCaller();
-        String response =  null;
+        Track track = null;
         try {
 
             AudioQueryRequest request = new AudioQueryRequest(fingerprints);
             String jsonString = new Gson().toJson(request);
             System.out.println("sending data to server with fingerprint " + jsonString);
-            response = caller.post("http://192.168.43.228:8082/v1/audio/query",jsonString);
+            String response = caller.post("http://10.84.24.57:8082/v1/audio/query",jsonString);
             System.out.println("received response from server for matched fingerprint " + response);
-
+            track = new Gson().fromJson(response,Track.class);
 
         } catch (IOException e) {
             e.printStackTrace();
+
         }
-        return response;
+
+        return track;
     }
 
     /**
