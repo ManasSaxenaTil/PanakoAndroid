@@ -8,7 +8,6 @@ public final class ClientUtils {
         try {
             // This class is only available on android
             Class.forName("android.app.Activity");
-            System.out.println("Running on Android!");
             return true;
         } catch (ClassNotFoundException e) {
             // the class is not found when running JVM

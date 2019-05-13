@@ -6,38 +6,47 @@ public class FingerprintData {
 
     private int time;
 
-    public FingerprintData() {
+    private int timeDelta;
+
+    private int frequency;
+
+    private FingerprintData() {
         super();
     }
 
-    public FingerprintData(int hash, int time) {
-        super();
-        this.hash = hash;
-        this.time = time;
+    public static FingerprintData createData(int hash, int time, int timeDelta, int frequency) {
+        FingerprintData fd = new FingerprintData();
+        fd.hash = hash;
+        fd.time = time;
+        fd.timeDelta = timeDelta;
+        fd.frequency = frequency;
+        return fd;
     }
 
     public int getHash() {
         return hash;
     }
 
-    public void setHash(int hash) {
-        this.hash = hash;
-    }
-
     public int getTime() {
         return time;
     }
 
-    public void setTime(int time) {
-        this.time = time;
+    public int getTimeDelta() {
+        return timeDelta;
+    }
+
+    public int getFrequency() {
+        return frequency;
     }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result + frequency;
         result = prime * result + hash;
         result = prime * result + time;
+        result = prime * result + timeDelta;
         return result;
     }
 
@@ -50,9 +59,13 @@ public class FingerprintData {
         if (getClass() != obj.getClass())
             return false;
         FingerprintData other = (FingerprintData) obj;
+        if (frequency != other.frequency)
+            return false;
         if (hash != other.hash)
             return false;
         if (time != other.time)
+            return false;
+        if (timeDelta != other.timeDelta)
             return false;
         return true;
     }
@@ -64,6 +77,10 @@ public class FingerprintData {
         builder.append(hash);
         builder.append(", time=");
         builder.append(time);
+        builder.append(", timeDelta=");
+        builder.append(timeDelta);
+        builder.append(", frequency=");
+        builder.append(frequency);
         builder.append("]");
         return builder.toString();
     }

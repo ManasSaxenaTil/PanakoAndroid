@@ -67,22 +67,14 @@ public class MainActivity extends AppCompatActivity {
                 .newBuilder()
                 .setDecoderBufferSize(44100)
                 .setDecoderCommand("ffmpeg -ss %input_seeking%  %number_of_seconds% -i \"%resource%\" -vn -ar %sample_rate% -ac %channels% -sample_fmt s16 -f s16le pipe:1")
-                .setDecoderTimeoutInSeconds(1000)
-                .setNfftSampleRate(8000)
-                .setNfftSize(512)
-                .setNfftStepSize(256)
+                .setDecoderTimeoutInSeconds(20)
+                .setMinFrequencyInCents(3700)
+                .setMaxFrequencyInCents(12200)
+                .setBinsPerOctave(36)
+                .setMaxEventPointDeltaFrequency(1066)
+                .setStepSize(1536)
+                .setSampleRate(44100)
                 .build();
-
-        NFFTEventPointProcessor.defaultMaxFilterWindowSize = 15;
-        NFFTEventPointProcessor.defaultMinFilterWindowSize = 7;
-        NFFTEventPointProcessor.maxFingerprintsPerEventPoint = 2;
-        NFFTEventPointProcessor.maxEventPointsPerFrame = 3;
-        NFFTEventPointProcessor.nfftSize = 512;
-        NFFTEventPointProcessor.nfftStepSize = 256;
-        NFFTEventPointProcessor.nfftSampleRate = 8000;
-        NFFTEventPointProcessor.nfftMinEventPointsDistance = 600;
-
-        //NFFTFingerprint.hashWithFrequencyEstimate = true;
 
     }
 
