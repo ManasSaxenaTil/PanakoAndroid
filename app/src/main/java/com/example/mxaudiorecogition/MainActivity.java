@@ -76,6 +76,9 @@ public class MainActivity extends AppCompatActivity {
                 .setSampleRate(44100)
                 .build();
 
+        NCteQHashFunction.ncteqBinsPerOctave = 36;
+        NCteQHashFunction.ncteqEventPointFrequencyDeltaMax = 1066;
+
     }
 
     @Override
