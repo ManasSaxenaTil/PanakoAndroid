@@ -7,7 +7,6 @@ import static com.example.mxaudiorecogition.FingerprintData.createData;
 
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -101,6 +100,8 @@ public class FingerprintGenerator {
         @Override
         public FingerprintGenerator build() {
             setPipedDecoder();
+            NCteQHashFunction.ncteqBinsPerOctave = fingerprintGenerator.binsPerOctave;
+            NCteQHashFunction.ncteqEventPointFrequencyDeltaMax = fingerprintGenerator.maxEventPointDeltaFrequency;
             return fingerprintGenerator;
         }
 
@@ -138,7 +139,6 @@ public class FingerprintGenerator {
                                                                 maxEventPointDeltaFrequency);
         d.addAudioProcessor(minMaxProcessor);
         d.run(decoderTimeoutInSeconds, SECONDS);
-
         return minMaxProcessor
                    .getFingerprints()
                    .stream()
