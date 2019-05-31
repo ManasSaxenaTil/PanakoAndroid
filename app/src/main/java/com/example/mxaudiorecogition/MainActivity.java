@@ -20,6 +20,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.example.mxaudiorecogition.com.mxaudiorecognition.client.FingerprintData;
+import com.example.mxaudiorecogition.com.mxaudiorecognition.client.FingerprintGenerator;
 import com.google.gson.Gson;
 
 import java.io.File;

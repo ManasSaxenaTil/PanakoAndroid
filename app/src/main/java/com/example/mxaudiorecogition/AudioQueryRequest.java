@@ -1,5 +1,7 @@
 package com.example.mxaudiorecogition;
 
+import com.example.mxaudiorecogition.com.mxaudiorecognition.client.FingerprintData;
+
 import java.util.ArrayList;
 import java.util.List;
 
