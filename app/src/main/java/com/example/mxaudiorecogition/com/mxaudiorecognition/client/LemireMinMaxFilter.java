@@ -17,7 +17,7 @@ public class LemireMinMaxFilter {
 
     /**
      * Create a new min-max filter.
-     * 
+     *
      * @param windowSize
      *            The size of the window, if clampEdges is true this should be odd.
      * @param dataLength
@@ -58,7 +58,7 @@ public class LemireMinMaxFilter {
     /**
      * Run the filter. The resulting filtered data can requested by calling
      * getMaxVal() and getMinVal().
-     * 
+     *
      * @param array
      *            the data to filter. It should have the same length as given in the
      *            constructor.

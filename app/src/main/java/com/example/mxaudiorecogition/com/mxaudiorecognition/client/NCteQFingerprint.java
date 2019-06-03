@@ -41,7 +41,7 @@ public class NCteQFingerprint {
 
     /**
      * Calculate a hash representing this fingerprint.
-     * 
+     *
      * @return a hash representing this fingerprint.
      */
     public int hash() {
@@ -83,9 +83,9 @@ public class NCteQFingerprint {
      * The time delta between the first and last event is max 2.4 seconds. In
      * analysis frames of 1024 samples at 44100Hz, this is 2.4 * 44100/1024 = 104
      * max (1.2 seconds is 52 per steps).
-     * 
+     *
      * [0.96,1.44] to [41.3,62.01]
-     * 
+     *
      * @return The difference between t1 and t3, in analysis frames.
      */
     public int timeDelta() {

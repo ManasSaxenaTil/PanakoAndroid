@@ -31,7 +31,7 @@ public class NCteQEventPoint {
 
     /**
      * Create a new event point with a time, frequency and energy and contrast..
-     * 
+     *
      * @param t
      *            The time expressed using an analysis frame index.
      * @param f

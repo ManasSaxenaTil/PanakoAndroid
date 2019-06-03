@@ -41,7 +41,7 @@ public enum PitchUnit {
 
     /**
      * Creates a new pitch unit with a human name.
-     * 
+     *
      * @param name
      *            The human name.
      */
@@ -50,7 +50,7 @@ public enum PitchUnit {
     }
 
     /**
-     * 
+     *
      * @return A nicer description of the name of the unit.
      */
     public String getHumanName() {
@@ -59,13 +59,13 @@ public enum PitchUnit {
 
     /**
      * Converts a pitch in Hertz to the current unit.
-     * 
-     * 
+     *
+     *
      * <code>
      * //440Hz is MIDI key 69
      * PitchUnit.MIDI_KEY.convert(440) == 69;
      * </code>
-     * 
+     *
      * @param hertzValue
      *            The pitch in Hertz.
      * @return A converted pitch value;
@@ -75,19 +75,19 @@ public enum PitchUnit {
      * Convert the given pitch in the given unit to this unit. E.g. following
      * statements should evaluate to true with the default reference frequency and
      * the default offset octave (for RELATIVE_CENTS).
-     * 
+     *
      * <pre>
      * PitchUnit.HERZ.convert(6900,PitchUnit.ABSOLUTE_CENTS) == 440
      * PitchUnit.HERZ.convert(69,PitchUnit.MIDI_KEY) == 440
      * PitchUnit.HERZ.convert(69.00,PitchUnit.MIDI_CENTS) == 440
      * PitchUnit.HERZ.convert(700,PitchUnit.RELATIVE_CENTS) == 440
-     * 
+     *
      * PitchUnit.ABSOLUTE_CENTS.convert(440,PitchUnit.HERTZ) == 6900
-     * 
-     * 
-     * 
+     *
+     *
+     *
      * </pre>
-     * 
+     *
      * @param value
      *            The value of the given pitch.
      * @param valueUnit
@@ -103,30 +103,30 @@ public enum PitchUnit {
     private double convertToHertz(final double value, final PitchUnit valueUnit) {
         final double hertzValue;
         switch (valueUnit) {
-        case ABSOLUTE_CENTS:
-            hertzValue = PitchUnit.absoluteCentToHertz(value);
-            break;
-        case HERTZ:
-            hertzValue = value;
-            break;
-        case MIDI_CENT:
-            hertzValue = PitchUnit.midiCentToHertz(value);
-            break;
-        case MIDI_KEY:
-            hertzValue = PitchUnit.midiKeyToHertz((int) value);
-            break;
-        case RELATIVE_CENTS:
-            hertzValue = PitchUnit.relativeCentToHertz(value);
-            break;
-        default:
-            throw new AssertionError("Unknown pitch unit: " + getHumanName());
+            case ABSOLUTE_CENTS:
+                hertzValue = PitchUnit.absoluteCentToHertz(value);
+                break;
+            case HERTZ:
+                hertzValue = value;
+                break;
+            case MIDI_CENT:
+                hertzValue = PitchUnit.midiCentToHertz(value);
+                break;
+            case MIDI_KEY:
+                hertzValue = PitchUnit.midiKeyToHertz((int) value);
+                break;
+            case RELATIVE_CENTS:
+                hertzValue = PitchUnit.relativeCentToHertz(value);
+                break;
+            default:
+                throw new AssertionError("Unknown pitch unit: " + getHumanName());
         }
         return hertzValue;
     }
 
     /**
      * Converts a Hertz value to pitch in this unit.
-     * 
+     *
      * @param hertzValue
      *            The value in Hertz.
      * @return The pitch in this unit.
@@ -134,23 +134,23 @@ public enum PitchUnit {
     private double convertHertz(final double hertzValue) {
         final double convertedPitch;
         switch (this) {
-        case ABSOLUTE_CENTS:
-            convertedPitch = PitchUnit.hertzToAbsoluteCent(hertzValue);
-            break;
-        case HERTZ:
-            convertedPitch = hertzValue;
-            break;
-        case MIDI_CENT:
-            convertedPitch = PitchUnit.hertzToMidiCent(hertzValue);
-            break;
-        case MIDI_KEY:
-            convertedPitch = PitchUnit.hertzToMidiKey(hertzValue);
-            break;
-        case RELATIVE_CENTS:
-            convertedPitch = PitchUnit.hertzToRelativeCent(hertzValue);
-            break;
-        default:
-            throw new AssertionError("Unknown pitch unit: " + getHumanName());
+            case ABSOLUTE_CENTS:
+                convertedPitch = PitchUnit.hertzToAbsoluteCent(hertzValue);
+                break;
+            case HERTZ:
+                convertedPitch = hertzValue;
+                break;
+            case MIDI_CENT:
+                convertedPitch = PitchUnit.hertzToMidiCent(hertzValue);
+                break;
+            case MIDI_KEY:
+                convertedPitch = PitchUnit.hertzToMidiKey(hertzValue);
+                break;
+            case RELATIVE_CENTS:
+                convertedPitch = PitchUnit.hertzToRelativeCent(hertzValue);
+                break;
+            default:
+                throw new AssertionError("Unknown pitch unit: " + getHumanName());
         }
         return convertedPitch;
     }
@@ -180,7 +180,7 @@ public enum PitchUnit {
 
     /**
      * Converts a MIDI CENT frequency to a frequency in Hz.
-     * 
+     *
      * @param midiCent
      *            The pitch in MIDI CENT.
      * @return The pitch in Hertz.
@@ -195,7 +195,7 @@ public enum PitchUnit {
      * E.g.<br>
      * <code>69.168 MIDI CENTS = MIDI NOTE 69  + 16,8 cents</code><br>
      * <code>69.168 MIDI CENTS = 440Hz + x Hz</code>
-     * 
+     *
      * @param hertzValue
      *            The pitch in Hertz.
      * @return The pitch in MIDI cent.
@@ -211,7 +211,7 @@ public enum PitchUnit {
     /**
      * Returns the frequency (Hz) of an absolute cent value. This calculation uses a
      * configured reference frequency.
-     * 
+     *
      * @param absoluteCent
      *            The pitch in absolute cent.
      * @return A pitch in Hz.
@@ -224,7 +224,7 @@ public enum PitchUnit {
      * The reference frequency is configured. The default reference frequency is
      * 16.35Hz. This is C0 on a piano keyboard with A4 tuned to 440 Hz. This means
      * that 0 cents is C0; 1200 is C1; 2400 is C2; ... also -1200 cents is C-1
-     * 
+     *
      * @param hertzValue
      *            The pitch in Hertz.
      * @return The value in absolute cents using the configured reference frequency
@@ -243,7 +243,7 @@ public enum PitchUnit {
     /**
      * Converts a Hertz value to relative cents. E.g. 440Hz is converted to 900 if
      * the reference is a C.
-     * 
+     *
      * @param hertzValue
      *            A value in hertz.
      * @return A value in relative cents.
@@ -261,7 +261,7 @@ public enum PitchUnit {
     /**
      * Converts a relative cent value to an absolute Hertz value by using
      * PitchUnit.REF_FREQ.
-     * 
+     *
      * @param relativeCent
      *            a value in relative cents.
      * @return A pitch in Hertz.
@@ -275,7 +275,7 @@ public enum PitchUnit {
 
     /**
      * Calculates the frequency (Hz) for a MIDI key.
-     * 
+     *
      * @param midiKey
      *            The MIDI key. A MIDI key is an integer between 0 and 127,
      *            inclusive.
@@ -296,7 +296,7 @@ public enum PitchUnit {
      * A MIDI key is an integer between 0 and 127, inclusive. Within a certain range
      * every pitch is mapped to a MIDI key. If a value outside the range is given an
      * IllegalArugmentException is thrown.
-     * 
+     *
      * @param hertzValue
      *            The pitch in Hertz.
      * @return An integer representing the closest midi key.
@@ -317,7 +317,7 @@ public enum PitchUnit {
      * Converts a ratio to cents. "Ratios Make Cents: Conversions from ratios to
      * cents and back again" in the book "Tuning Timbre Spectrum Scale" William A.
      * Sethares
-     * 
+     *
      * @param ratio
      *            A cent value
      * @return A ratio containing the same information.
@@ -332,7 +332,7 @@ public enum PitchUnit {
      * Converts cent values to ratios. See "Ratios Make Cents: Conversions from
      * ratios to cents and back again" in the book "Tuning Timbre Spectrum Scale"
      * William A. Sethares.
-     * 
+     *
      * @param cent
      *            A cent value
      * @return A ratio containing the same information.

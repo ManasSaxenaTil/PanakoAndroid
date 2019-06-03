@@ -27,13 +27,13 @@ public class NCteQHashFunction {
          * deviation divide the frequency component by 16 so it lays in [0-16] < 2^5.
          * Hash is designed to allow a 16% deviation in pitch. So pitch between
          * [84%-116%] in cents:
-         * 
+         *
          * 1200*ln(0.84)/ln(2) = -302 cents
-         * 
+         *
          * 1200*ln(1.16)/ln(2) = +257 cents
-         * 
+         *
          * [-302,257] in bins = [-9,7] = 16 bins,
-         * 
+         *
          * 256 bins/16 bins = 16 steps
          */
 
@@ -47,9 +47,9 @@ public class NCteQHashFunction {
          * constant Q. Also tempo information is changed. Each delta is within 1066
          * cents, with 36 bins per octave, this means 31 bins The delta can be positive
          * or negative:
-         * 
+         *
          * [-1066,1066] => [-1066*36/1200,1066*36/1200] = [-32,32]
-         * 
+         *
          * Map it to positive, so add 32 => [0,64], 6bits
          */
 
@@ -60,19 +60,19 @@ public class NCteQHashFunction {
          * No direct delta t can be used, only a ratio between the two delta t values.
          * The idea is that linear speed changes are supported then the ratio of times,
          * a fractional percentage scaled to seven bits.
-         * 
+         *
          * E.g. if the sample rate is 44100 and steps of 1536 are taken, and the minimum
          * delta t = 34.8 milliseconds, max delta t = 1400 milliseconds
-         * 
+         *
          * Step in ms = 1536/44100/s * 1000 = 34.8ms so,
-         * 
+         *
          * min delta t is 1 steps,
-         * 
+         *
          * max delta t = 1400/34.8 = 40
-         * 
+         *
          * Ratio is between (t2-t1) / (t3-t1) is [1-40]/[2-80] => 68 different values,
          * map to 64
-         * 
+         *
          * hash = Hash.new (1..40).each do |small| (2..80).each do |big|
          * hash[(small.to_f/big.to_f * 4).round] = true end end puts
          * hash.keys.sort.join("\n") puts hash.size
@@ -85,15 +85,15 @@ public class NCteQHashFunction {
         /*
          * Adds info about the size of t3-t1. Time can deviate about 10%, the delta
          * between t3 and t2 must be scaled:
-         * 
+         *
          * [68ms,2800ms] = [2-80]
-         * 
+         *
          * [76,3080] (+10%) = [2,88]
-         * 
+         *
          * [57,2520] (-10%] = [2,72] to make
-         * 
+         *
          * [2,88] = [2,72] divide by 20 and
-         * 
+         *
          * round: [0,round(4.4)] = [0,round(3.6)]
          */
         int timeDeltaBin = Math.round((t3 - t1) / 20.0f) % (1 << 2);// 2bits

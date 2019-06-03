@@ -1,5 +1,6 @@
 package com.example.mxaudiorecogition.com.mxaudiorecognition.client;
 
+
 public class FingerprintData {
 
     private int hash;

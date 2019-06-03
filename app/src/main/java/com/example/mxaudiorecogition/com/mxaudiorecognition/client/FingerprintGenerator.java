@@ -1,10 +1,10 @@
 package com.example.mxaudiorecogition.com.mxaudiorecognition.client;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+
 import static com.example.mxaudiorecogition.com.mxaudiorecognition.client.ClientUtils.enrichDecoderCommand;
 import static com.example.mxaudiorecogition.com.mxaudiorecognition.client.ClientUtils.setPipeArtifacts;
 import static com.example.mxaudiorecogition.com.mxaudiorecognition.client.FingerprintData.createData;
-
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 import java.util.List;
 import java.util.concurrent.TimeoutException;
@@ -29,7 +29,7 @@ public class FingerprintGenerator {
 
     private int maxEventPointDeltaFrequency;
 
-    private int binsPerOctave;
+    private float binsPerOctave;
 
     private int minFrequencyInCents;
 
@@ -82,7 +82,7 @@ public class FingerprintGenerator {
             return this;
         }
 
-        public FingerprintGeneratorBuilder setBinsPerOctave(int binsPerOctave) {
+        public FingerprintGeneratorBuilder setBinsPerOctave(float binsPerOctave) {
             fingerprintGenerator.binsPerOctave = binsPerOctave;
             return this;
         }
@@ -100,7 +100,7 @@ public class FingerprintGenerator {
         @Override
         public FingerprintGenerator build() {
             setPipedDecoder();
-            NCteQHashFunction.ncteqBinsPerOctave = fingerprintGenerator.binsPerOctave;
+            NCteQHashFunction.ncteqBinsPerOctave = (int) fingerprintGenerator.binsPerOctave;
             NCteQHashFunction.ncteqEventPointFrequencyDeltaMax = fingerprintGenerator.maxEventPointDeltaFrequency;
             return fingerprintGenerator;
         }
@@ -112,11 +112,11 @@ public class FingerprintGenerator {
             String decoderCommand = enrichDecoderCommand(fingerprintGenerator.decoderCommand);
             if (pipeEnvironment != null) {
                 // @formatter:off
-                PipeDecoder decoder = new PipeDecoder(pipeEnvironment, 
-                                                      pipeArgument, 
-                                                      decoderCommand, 
-                                                      null,
-                                                      fingerprintGenerator.decoderBufferSize);
+                PipeDecoder decoder = new PipeDecoder(pipeEnvironment,
+                        pipeArgument,
+                        decoderCommand,
+                        null,
+                        fingerprintGenerator.decoderBufferSize);
                 // @formatter:on
                 PipedAudioStream.setDecoder(decoder);
             }
@@ -124,26 +124,26 @@ public class FingerprintGenerator {
 
     }
 
-    public List<FingerprintData> getFingerprints(String resource) throws TimeoutException {
+    public List<FingerprintData> getFingerprints(String resource, int sampleTime) throws TimeoutException {
         ConstantQ constantQ = createConstantQ();
         int size = constantQ.getFFTlength();
         int overlap = size - stepSize;
         PipedAudioStream pipedAudioStream = new PipedAudioStream(resource);
-        TarsosDSPAudioInputStream audioStream = pipedAudioStream.getMonoStream(sampleRate, 0);
+        TarsosDSPAudioInputStream audioStream = pipedAudioStream.getMonoStream(sampleRate, 0, sampleTime);
         TimedAudioDispatcher d = new TimedAudioDispatcher(audioStream, size, overlap);
         // @formatter:off
         final NCteQEventPointProcessor minMaxProcessor = new NCteQEventPointProcessor(
-                                                                constantQ, 
-                                                                sampleRate, 
-                                                                stepSize,
-                                                                maxEventPointDeltaFrequency);
+                constantQ,
+                sampleRate,
+                stepSize,
+                maxEventPointDeltaFrequency);
         d.addAudioProcessor(minMaxProcessor);
         d.run(decoderTimeoutInSeconds, SECONDS);
         return minMaxProcessor
-                   .getFingerprints()
-                   .stream()
-                   .map(f -> createData(f.hash(), f.t1, f.timeDelta(), f.f1))
-                   .collect(Collectors.toList());
+                .getFingerprints()
+                .stream()
+                .map(f -> createData(f.hash(), f.t1, f.timeDelta(), f.f1))
+                .collect(Collectors.toList());
         // @formatter:on
     }
 
@@ -151,6 +151,10 @@ public class FingerprintGenerator {
         float minFreqInHerz = (float) PitchUnit.HERTZ.convert(minFrequencyInCents, PitchUnit.ABSOLUTE_CENTS);
         float maxFreqInHertz = (float) PitchUnit.HERTZ.convert(maxFrequencyInCents, PitchUnit.ABSOLUTE_CENTS);
         return new ConstantQ(sampleRate, minFreqInHerz, maxFreqInHertz, binsPerOctave);
+    }
+
+    public List<FingerprintData> getFingerprints(String resource) throws TimeoutException {
+        return getFingerprints(resource, -1);
     }
 
 }
