@@ -7,21 +7,37 @@
         android:id="@+id/button"
         android:layout_width="wrap_content"
         android:layout_height="37dp"
-        android:text="Browse Files" />
+        android:text="Browse Track"
+
+        />
 
     <EditText
-        android:id="@+id/editText3"
+        android:id="@+id/directoryPath"
+        android:layout_width="401dp"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="/path/to/song.mp3"
+
+        />
+
+    <EditText
+        android:id="@+id/pattern"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="textPersonName"
-        android:text="" />
+        android:text="^[0-9]*.mp3"
+        android:visibility="gone"
+        />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ClipFromSeconds" />
+        android:text="ClipFromSeconds"
+        android:visibility="gone"
+        />
 
     <EditText
         android:id="@+id/editText"
@@ -29,13 +45,17 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="textPersonName"
-        android:text="10" />
+        android:text="10"
+        android:visibility="gone"
+        />
 
     <TextView
         android:id="@+id/textView2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ClipEndSeconds" />
+        android:text="ClipEndSeconds"
+        android:visibility="gone"
+        />
 
     <EditText
         android:id="@+id/editText2"
@@ -43,19 +63,24 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="textPersonName"
-        android:text="40" />
+        android:text="40"
+        android:visibility="gone"/>
 
     <Button
         android:id="@+id/button3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Clip And Play" />
+        android:text="Clip And Play"
+        android:visibility="gone"
+        />
 
     <Button
         android:id="@+id/button2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Match audioclip" />
+        android:text="Match audioclip"
+        android:visibility="gone"
+        />
 
     <TextView
         android:id="@+id/textView3"
@@ -63,10 +88,26 @@
         android:layout_height="259dp"
         android:text="" />
 
+    <EditText
+        android:id="@+id/sample_time_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:inputType="textPersonName"
+        android:text="20" />
+
+    <Button
+        android:id="@+id/generate_stats_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Generate Stats" />
+
     <Button
         android:id="@+id/button4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Clear" />
+        android:text="Clear"
+        android:visibility="gone"
+        />
 
 </LinearLayout>

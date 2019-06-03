@@ -3,10 +3,12 @@ package com.example.mxaudiorecogition;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.v4.app.ActivityCompat;
@@ -22,28 +24,30 @@ import android.widget.TextView;
 
 import com.example.mxaudiorecogition.com.mxaudiorecognition.client.FingerprintData;
 import com.example.mxaudiorecogition.com.mxaudiorecognition.client.FingerprintGenerator;
+import com.example.mxaudiorecogition.stats.Stats;
 import com.google.gson.Gson;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
 
 public class MainActivity extends AppCompatActivity {
 
-    private String downloadPath = "";
     private static FingerprintGenerator fingerprintGenerator;
     private String sampleFileName = "";
-    private MediaPlayer mp = new MediaPlayer();
+    private static MediaPlayer mp = new MediaPlayer();
 
 
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        downloadPath = this.getCacheDir().getAbsolutePath();
         new AndroidFFMPEGLocator(this);
 
         int SDK_INT = android.os.Build.VERSION.SDK_INT;
@@ -60,8 +64,67 @@ public class MainActivity extends AppCompatActivity {
         registerClipButtonListener();
         registerFingerprintMatcherListener();
         registerClearButtonListener();
+        registerStatsButtonListener();
 
     }
+
+    private void registerStatsButtonListener() {
+        Button generateFingerPrints = (Button) findViewById(R.id.generate_stats_button);
+        generateFingerPrints.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View view) {
+                EditText sampleTime = (EditText) findViewById(R.id.sample_time_input);
+                EditText pattern = (EditText) findViewById(R.id.pattern);
+                EditText downloadPath = (EditText) findViewById(R.id.directoryPath);
+                //List<String> audioFiles  = FileUtils.glob(downloadPath.getText().toString(), pattern.getText().toString(), false);
+
+                FingerPrintGeneratorAsyncTask task = new FingerPrintGeneratorAsyncTask();
+                task.execute(new TrackClip(downloadPath.getText().toString(),Integer.parseInt(sampleTime.getText().toString())));
+                //displayStats(stat,downloadPath.getText().toString());
+
+
+            }
+        });
+    }
+
+    private void displayStats(Stats stat) {
+        TextView printFingerprint = (TextView)findViewById(R.id.textView3);
+        EditText downloadPath = (EditText) findViewById(R.id.directoryPath);
+        printFingerprint.setClickable(true);
+        printFingerprint.setMovementMethod (LinkMovementMethod.getInstance());
+
+        String displayMessage = "";
+        displayMessage = getHtmlFormattedStatResponse(stat,downloadPath.getText().toString());
+
+        printFingerprint.setText(Html.fromHtml(displayMessage,Html.FROM_HTML_MODE_COMPACT));
+
+    }
+
+    private Stats generateAudioFingerprintsStats(List<String> audioFiles, int sampleTime) {
+        List<Long> timeTakenList= new ArrayList<>();
+        long totalTimeTaken=0,totalHashes=0;
+        for(String filePath : audioFiles){
+            Instant start = Instant.now();
+            try {
+                List<FingerprintData> fps = fingerprintGenerator.getFingerprints(filePath,sampleTime);
+                Instant end = Instant.now();
+                long timeElapsed = Duration.between(start,end).toMillis();
+                timeTakenList.add(timeElapsed);
+                totalTimeTaken += timeElapsed;
+                totalHashes += fps.size();
+
+            } catch (TimeoutException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+
+
+        }
+        Stats stats = new Stats(totalTimeTaken/timeTakenList.size(), Collections.max(timeTakenList),0,sampleTime,timeTakenList.size(),(int)totalHashes/timeTakenList.size());
+        return stats;
+    }
+
 
     private void initializeSDK(){
         fingerprintGenerator
@@ -97,8 +160,11 @@ public class MainActivity extends AppCompatActivity {
                 uri = resultData.getData();
                 try {
                     File file = FileUtils.from(MainActivity.this,uri);
-                    EditText songFullPath = (EditText)findViewById(R.id.editText3);
-                    songFullPath.setText(file.getAbsolutePath());
+                    String downloadPath = file.getAbsolutePath();
+
+                    EditText songFullPath = (EditText)findViewById(R.id.directoryPath);
+
+                    songFullPath.setText(downloadPath);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -200,15 +266,28 @@ public class MainActivity extends AppCompatActivity {
         return formattedResponse;
 
     }
+    private String getHtmlFormattedStatResponse(Stats stat,String path) {
+        String formattedResponse ="";
+        formattedResponse += "<h3>" + " AvgTime: <font color=\'#3c8cf0\'>" + stat.avgTime +" </font></h2>";
+        formattedResponse += "<br><h4>" + " MaxTime: <font color=\'#3c8cf0\'>" + stat.maxTimeTaken +" </font></h4>";
+        formattedResponse += "<h4 >" +" MinTime: <font color=\'#3c8cf0\'>" + stat.minTime +"</font> </h4>";
+        //formattedResponse += "<br> <h4 >" +" Number of Songs: <font color=\'#3c8cf0\'>" + stat.numberOfSongs +"</font></h4>";
+        formattedResponse += "<br> <h4 >" +" Avg Hashes: <font color=\'#3c8cf0\'>" + stat.avgNumberOfHashes +"</font></h4>";
+        formattedResponse += "<br> <h4 >" +" Track location: <font color=\'#3c8cf0\'>" + path +"</font></h4>";
+
+        return formattedResponse;
+
+    }
 
     private void playSong(){
         try{
+            String downloadPath= "";
             File song = new File(downloadPath + "/" + sampleFileName);
             boolean songExist = song.exists();
 
             System.out.println("The song exists?"+songExist);
 
-            EditText songFullPath = (EditText)findViewById(R.id.editText3);
+            EditText songFullPath = (EditText)findViewById(R.id.directoryPath);
             String sourceSong = songFullPath.getText().toString();
             mp.reset();
 
@@ -252,7 +331,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
                 EditText fromSeconds = (EditText) findViewById(R.id.editText);
                 EditText endSeconds = (EditText) findViewById(R.id.editText2);
-                EditText srcSongPath = (EditText) findViewById(R.id.editText3);
+                EditText srcSongPath = (EditText) findViewById(R.id.directoryPath);
                 sampleFileName = UUID.randomUUID().toString() + ".mp3";
                 clipSong(fromSeconds.getText().toString(),
                         endSeconds.getText().toString(),
@@ -267,11 +346,12 @@ public class MainActivity extends AppCompatActivity {
 
 
     private List<FingerprintData> getAudioFingerprints() {
-        List<String> files  = FileUtils.glob(downloadPath, sampleFileName, false);
+        EditText downloadPath = (EditText)findViewById(R.id.directoryPath);
+        List<String> files  = FileUtils.glob(downloadPath.getText().toString(), sampleFileName, false);
         List<List<FingerprintData>> result = new ArrayList<>();
         if(files != null && !files.isEmpty()){
             List<FingerprintData> fingerprints = query(files.get(0));
-            File fdelete = new File(downloadPath + "/" + sampleFileName);
+            File fdelete = new File(downloadPath.getText().toString() + "/" + sampleFileName);
             fdelete.delete();
             return fingerprints;
         }
@@ -289,7 +369,8 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void clipSong(String startTime, String endTime, String srcSongPath ,String ffmpegDestination){
-        String targetSongPath = downloadPath + "/" + sampleFileName;
+        EditText downloadPath = (EditText)findViewById(R.id.directoryPath);
+        String targetSongPath = downloadPath.getText().toString() + "/" + sampleFileName;
         String[] cmd = {
                 ffmpegDestination,
                 "-i",
@@ -322,10 +403,58 @@ public class MainActivity extends AppCompatActivity {
             }
 
         }
+    }
 
+    public static FingerprintGenerator getFingerprintGenerator() {
+        return fingerprintGenerator;
+    }
 
+    private class FingerPrintGeneratorAsyncTask extends AsyncTask<TrackClip,Integer, Stats> {
+        private ProgressDialog progressDialog;
+        @Override
+        protected void onPreExecute() {
+            progressDialog = ProgressDialog.show(MainActivity.this,
+                    "ProgressDialog",
+                    "Wait for fingerprint generation");
+        }
+        @Override
+        protected Stats doInBackground(TrackClip... trackClips) {
+            int maxTime =0, minTime = 999999999;
+            int hashSize =0;
+            int numberOfTests=10;
+            double totalTime=0;
+            try{
+                for(int i=0;i<numberOfTests;i++){
+                    Instant start = Instant.now();
+                    List<FingerprintData> fps = fingerprintGenerator.getFingerprints(trackClips[0].path,trackClips[0].sampleTime);
 
+                    Instant end = Instant.now();
+                    int timeDiff = (int)Duration.between(start,end).toMillis();
+                    if(timeDiff > maxTime){
+                        maxTime = timeDiff;
+                    }
+                    if(timeDiff < minTime){
+                        minTime = timeDiff;
+                    }
+                    hashSize = fps.size();
+                    totalTime += timeDiff;
+                }
 
+            } catch (TimeoutException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+            return new Stats(totalTime/numberOfTests,maxTime,minTime,trackClips[0].sampleTime,1,hashSize);
 
+        }
+
+        @Override
+        protected void onPostExecute(Stats stats) {
+
+            if (progressDialog.isShowing()) {
+                progressDialog.dismiss();
+            }
+            displayStats(stats);
+        }
     }
 }
