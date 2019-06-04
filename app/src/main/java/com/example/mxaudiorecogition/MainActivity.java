@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.support.v4.app.ActivityCompat;
@@ -26,6 +27,8 @@ import com.google.gson.Gson;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -35,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String downloadPath = "";
     private static FingerprintGenerator fingerprintGenerator;
-    private String sampleFileName = "";
+    //private String sampleFileName = "";
     private MediaPlayer mp = new MediaPlayer();
 
 
@@ -53,9 +56,15 @@ public class MainActivity extends AppCompatActivity {
                     .permitAll().build();
             StrictMode.setThreadPolicy(policy);
         }
+
         setContentView(R.layout.activity_main);
         requestStoragePermission();
         initializeSDK();
+
+        TextView printFingerprint = (TextView)findViewById(R.id.textView3);
+        printFingerprint.setClickable(true);
+        printFingerprint.setMovementMethod (LinkMovementMethod.getInstance());
+
         registerBrowseButtonListener();
         registerClipButtonListener();
         registerFingerprintMatcherListener();
@@ -114,6 +123,8 @@ public class MainActivity extends AppCompatActivity {
                 mp.reset();
                 TextView printFingerprint = (TextView)findViewById(R.id.textView3);
                 printFingerprint.setText("");
+                TextView statsText = (TextView)findViewById(R.id.statisticsText);
+                statsText.setText("");
             }
 
         });
@@ -163,23 +174,13 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onClick(View view) {
+                EditText srcSongPath = (EditText) findViewById(R.id.editText3);
+                EditText time = (EditText) findViewById(R.id.sampleTime);
+                int sampleTime = Integer.parseInt(time.getText().toString());
+                FingerprintGenerationAsyncTask fingerprintGenerationAsyncTask = new FingerprintGenerationAsyncTask();
+                fingerprintGenerationAsyncTask.execute(new InputTrack(srcSongPath.getText().toString(),sampleTime));
 
-                List<FingerprintData> result = getAudioFingerprints();
-                TextView printFingerprint = (TextView)findViewById(R.id.textView3);
-                printFingerprint.setClickable(true);
-                printFingerprint.setMovementMethod (LinkMovementMethod.getInstance());
 
-                Track matchedTrack = matchFingerprintFromServer(result);
-                String displayMessage = "";
-
-                if(matchedTrack==null || (matchedTrack.getTrackTitle()==null && matchedTrack.getSeokey()==null)){
-                    displayMessage = "<h2 color=red>No match found from server</h2>";
-                } else {
-                    displayMessage = getHtmlFormattedTrackResponse(matchedTrack);
-                }
-
-                printFingerprint.setText(Html.fromHtml(displayMessage,Html.FROM_HTML_MODE_COMPACT));
-                mp.reset();
 
             }
         });
@@ -201,18 +202,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void playSong(){
+    private void playSong(String songPath){
         try{
-            File song = new File(downloadPath + "/" + sampleFileName);
-            boolean songExist = song.exists();
 
-            System.out.println("The song exists?"+songExist);
-
-            EditText songFullPath = (EditText)findViewById(R.id.editText3);
-            String sourceSong = songFullPath.getText().toString();
             mp.reset();
 
-            mp.setDataSource(downloadPath + "/" + sampleFileName);
+            mp.setDataSource(songPath);
             mp.prepare();
             mp.start();
         }
@@ -229,9 +224,13 @@ public class MainActivity extends AppCompatActivity {
 
             AudioQueryRequest request = new AudioQueryRequest(fingerprints);
             String jsonString = new Gson().toJson(request);
-            System.out.println("sending data to server with fingerprint " + jsonString);
-            String response = caller.post("https://mxaudio.dev.mxplay.com/v1/audio/query",jsonString);
-            System.out.println("received response from server for matched fingerprint " + response);
+
+            Instant start = Instant.now();
+            String response = caller.post("http://192.168.0.103:8082/v1/audio/query",jsonString);
+            Instant end = Instant.now();
+            TextView statsText = (TextView)findViewById(R.id.statisticsText);
+            statsText.append("\n FP query time: " + Duration.between(end,start));
+
             track = new Gson().fromJson(response,Track.class);
 
         } catch (IOException e) {
@@ -250,82 +249,75 @@ public class MainActivity extends AppCompatActivity {
         clipSongButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                EditText fromSeconds = (EditText) findViewById(R.id.editText);
-                EditText endSeconds = (EditText) findViewById(R.id.editText2);
                 EditText srcSongPath = (EditText) findViewById(R.id.editText3);
-                sampleFileName = UUID.randomUUID().toString() + ".mp3";
-                clipSong(fromSeconds.getText().toString(),
-                        endSeconds.getText().toString(),
-                        srcSongPath.getText().toString(),
-                        AndroidFFMPEGLocator.ffmpegTargetLocation().getAbsolutePath());
 
-                playSong();
+                playSong(srcSongPath.getText().toString());
             }
 
         });
     }
 
 
-    private List<FingerprintData> getAudioFingerprints() {
-        List<String> files  = FileUtils.glob(downloadPath, sampleFileName, false);
-        List<List<FingerprintData>> result = new ArrayList<>();
-        if(files != null && !files.isEmpty()){
-            List<FingerprintData> fingerprints = query(files.get(0));
-            File fdelete = new File(downloadPath + "/" + sampleFileName);
-            fdelete.delete();
-            return fingerprints;
-        }
-        return  new ArrayList<>();
-    }
-
-    private List<FingerprintData> query(String query) {
+    private List<FingerprintData> generatFingerprintData(String query, int sampleTime) {
         try {
-            return fingerprintGenerator.getFingerprints(query);
+            return fingerprintGenerator.getFingerprints(query,sampleTime);
         } catch (TimeoutException e) {
             e.printStackTrace();
             return new ArrayList<>();
         }
     }
 
+    private  class FingerprintGenerationAsyncTask extends AsyncTask<InputTrack,Integer,List<FingerprintData>> {
 
-    private void clipSong(String startTime, String endTime, String srcSongPath ,String ffmpegDestination){
-        String targetSongPath = downloadPath + "/" + sampleFileName;
-        String[] cmd = {
-                ffmpegDestination,
-                "-i",
-                srcSongPath,
-                "-ss",
-                startTime,
-                "-to",
-                endTime,
-                "-c",
-                "copy",
-                targetSongPath};
+        @Override
+        protected List<FingerprintData> doInBackground(InputTrack... inputTracks) {
+            Instant start = Instant.now();
+            List<FingerprintData> fps  = generatFingerprintData(inputTracks[0].trackPath,inputTracks[0].sampleTime);
+            Instant end = Instant.now();
+            TextView statsText = (TextView)findViewById(R.id.statisticsText);
+            statsText.append("\n FP gen time: " + Duration.between(end,start));
 
-        TextView output = (TextView)findViewById(R.id.textView3);
+            return fps;
+        }
 
-        ShellCommand sh = new ShellCommand();
-        Process process = sh.run(cmd,null);
-        while (true) {
-            try{
-                if(process.exitValue() == 0){
-                    output.setText("Clip success ! Go ahead match your clip for recognition");
-                }
-                else{
-                    output.setText("Unsupported song format unable to clip");
-                    System.out.println(Util.convertInputStreamToString(process.getErrorStream()));
-                }
-                break;
-            }
-            catch (IllegalThreadStateException e){
-                // do nothing
-            }
+        @Override
+        protected void onPostExecute(List<FingerprintData> fps){
+            FingerprintQueryAsyncTask fingerprintQueryAsyncTask = new FingerprintQueryAsyncTask();
+            fingerprintQueryAsyncTask.execute(fps);
+        }
+    }
+
+    private  class FingerprintQueryAsyncTask extends AsyncTask<List<FingerprintData>,Integer,Track> {
+
+
+        @Override
+        protected Track doInBackground(List<FingerprintData>... fps) {
+            Track matchedTrack = matchFingerprintFromServer(fps[0]);
+
+
+            return matchedTrack;
 
         }
 
+        @Override
+        protected void onPostExecute(Track track){
 
-
-
+            displayTrackResults(track);
+        }
 
     }
+
+    private void displayTrackResults(Track track) {
+        String displayMessage = "";
+
+        if(track==null || (track.getTrackTitle()==null && track.getSeokey()==null)){
+            displayMessage = "<h2 color=red>No match found from server</h2>";
+        } else {
+            displayMessage = getHtmlFormattedTrackResponse(track);
+        }
+        TextView printFingerprint = (TextView)findViewById(R.id.textView3);
+        printFingerprint.setText(Html.fromHtml(displayMessage,Html.FROM_HTML_MODE_COMPACT));
+        mp.reset();
+    }
+
 }
